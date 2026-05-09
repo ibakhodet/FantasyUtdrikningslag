@@ -18,6 +18,7 @@ export interface AuthState {
   user: User | null;
   playerId: string | null;
   unknownEmail: string | null;
+  magicLinkError: string | null;
 }
 
 const provider = new GoogleAuthProvider();
@@ -29,11 +30,12 @@ export function useFirebaseAuth(): AuthState {
     user: null,
     playerId: null,
     unknownEmail: null,
+    magicLinkError: null,
   });
 
   useEffect(() => {
     if (!FIREBASE_ENABLED || !auth) {
-      setState({ loading: false, user: null, playerId: null, unknownEmail: null });
+      setState({ loading: false, user: null, playerId: null, unknownEmail: null, magicLinkError: null });
       return;
     }
 
@@ -47,13 +49,14 @@ export function useFirebaseAuth(): AuthState {
         signInWithEmailLink(auth, email, window.location.href)
           .then(() => {
             window.localStorage.removeItem(EMAIL_FOR_LINK_KEY);
-            // Strip the magic-link query params from the URL.
             const url = new URL(window.location.href);
             url.search = '';
             window.history.replaceState({}, '', url.toString());
           })
-          .catch((err) => {
+          .catch((err: unknown) => {
             console.error('Magic link sign-in failed', err);
+            const msg = err instanceof Error ? err.message : 'Login-lenken feilet. Prøv å be om en ny.';
+            setState((s) => ({ ...s, loading: false, magicLinkError: msg }));
           });
       }
     }
@@ -61,16 +64,16 @@ export function useFirebaseAuth(): AuthState {
     return onAuthStateChanged(auth, (user) => {
       if (!user) {
         setCurrentUserId(null);
-        setState({ loading: false, user: null, playerId: null, unknownEmail: null });
+        setState({ loading: false, user: null, playerId: null, unknownEmail: null, magicLinkError: null });
         return;
       }
       const playerId = lookupPlayerByEmail(user.email);
       if (playerId) {
         setCurrentUserId(playerId);
-        setState({ loading: false, user, playerId, unknownEmail: null });
+        setState({ loading: false, user, playerId, unknownEmail: null, magicLinkError: null });
       } else {
         setCurrentUserId(null);
-        setState({ loading: false, user, playerId: null, unknownEmail: user.email });
+        setState({ loading: false, user, playerId: null, unknownEmail: user.email, magicLinkError: null });
       }
     });
   }, []);

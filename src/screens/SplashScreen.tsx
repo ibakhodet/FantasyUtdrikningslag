@@ -14,6 +14,27 @@ export function SplashScreen() {
   const [magicSent, setMagicSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  if (auth.magicLinkError) {
+    return (
+      <div className="screen scroll" style={{ paddingBottom: 40 }}>
+        <div className="screen-pad">
+          <Eyebrow>INNLOGGING FEILET</Eyebrow>
+          <h1 className="h1" style={{ marginTop: 4 }}>Ugyldig lenke</h1>
+          <p style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--muted)', marginTop: 12, lineHeight: 1.5 }}>
+            {auth.magicLinkError}
+          </p>
+          <button
+            className="cta"
+            style={{ marginTop: 22, width: '100%' }}
+            onClick={() => window.location.replace(window.location.origin + window.location.pathname)}
+          >
+            Prøv igjen
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Authenticated, but email isn't mapped to a player.
   if (auth.unknownEmail) {
     return (
