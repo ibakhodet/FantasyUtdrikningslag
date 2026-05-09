@@ -34,7 +34,10 @@ export function TeamScreen({ userId }: Props) {
   function setCap(pid: string) {
     if (isLocked) return;
     if (!inTeam.players.includes(pid)) return;
-    setTeam(userId, SATURDAY_ID, { ...inTeam, captain: pid });
+    setTeam(userId, SATURDAY_ID, {
+      ...inTeam,
+      captain: inTeam.captain === pid ? null : pid,
+    });
   }
 
   function dayPts(pid: string) {

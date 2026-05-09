@@ -12,6 +12,7 @@ export function TabellScreen() {
     const raw = totalsByPlayer(events);
     return PLAYERS.map((p) => ({
       p,
+      rawPts: raw[p.id]?.perDay['lor'] ?? 0,
       total: fantasyTotalByUser(p.id, allTeams, raw),
     })).sort((a, b) => b.total - a.total);
   }, [events, allTeams]);
@@ -107,9 +108,9 @@ export function TabellScreen() {
               </span>
               <span
                 className="num"
-                style={{ color: pointsColor(row.total) }}
+                style={{ color: pointsColor(row.rawPts) }}
               >
-                {row.total === 0 ? '·' : fmtPts(row.total)}
+                {row.rawPts === 0 ? '·' : fmtPts(row.rawPts)}
               </span>
               <span
                 className="num bold"

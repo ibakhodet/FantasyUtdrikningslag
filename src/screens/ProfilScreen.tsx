@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { Avatar } from '../components/Avatar';
 import { Eyebrow, fmtPts, pointsColor } from '../components/ui';
 import { PEOPLE_BY_ID, PLAYERS } from '../data/players';
-import { totalsByPlayer, useEvents } from '../lib/store';
+import { fantasyTotalByUser, totalsByPlayer, useAllTeams, useEvents } from '../lib/store';
 import { logout } from '../lib/auth';
 
 interface Props {
@@ -11,14 +12,18 @@ interface Props {
 export function ProfilScreen({ userId }: Props) {
   const me = PEOPLE_BY_ID[userId];
   const events = useEvents();
-  const totals = totalsByPlayer(events);
-  const myTotal = totals[userId]?.total ?? 0;
+  const allTeams = useAllTeams();
+  const rawTotals = useMemo(() => totalsByPlayer(events), [events]);
+  const myTotal = rawTotals[userId]?.total ?? 0;
   const myEvents = events.filter((e) => e.playerId === userId);
 
-  const ranking = PLAYERS.map((p) => ({ id: p.id, total: totals[p.id]?.total ?? 0 })).sort(
-    (a, b) => b.total - a.total,
-  );
-  const place = ranking.findIndex((r) => r.id === userId) + 1;
+  const place = useMemo(() => {
+    const ranked = PLAYERS.map((p) => ({
+      id: p.id,
+      score: fantasyTotalByUser(p.id, allTeams, rawTotals),
+    })).sort((a, b) => b.score - a.score);
+    return ranked.findIndex((r) => r.id === userId) + 1;
+  }, [allTeams, rawTotals, userId]);
 
   if (!me) return null;
 
