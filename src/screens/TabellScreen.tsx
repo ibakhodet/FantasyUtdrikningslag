@@ -14,7 +14,7 @@ export function TabellScreen() {
       p,
       rawPts: raw[p.id]?.perDay['lor'] ?? 0,
       total: fantasyTotalByUser(p.id, allTeams, raw),
-    })).sort((a, b) => b.total - a.total);
+    })).sort((a, b) => (b.total - a.total) || (b.rawPts - a.rawPts));
   }, [events, allTeams]);
 
   const podium = useMemo(() => totals.slice(0, 3), [totals]);
@@ -54,10 +54,10 @@ export function TabellScreen() {
                     style={{
                       fontFamily: 'var(--mono)',
                       fontSize: 12,
-                      color: pointsColor(row.total),
+                      color: pointsColor(row.total || row.rawPts),
                     }}
                   >
-                    {fmtPts(row.total)}
+                    {fmtPts(row.total || row.rawPts)}
                   </div>
                   <div
                     className="podium-block"
@@ -88,8 +88,8 @@ export function TabellScreen() {
           <div className="table-head single">
             <span>#</span>
             <span>SPILLER</span>
-            <span style={{ textAlign: 'center' }}>POENG</span>
-            <span style={{ textAlign: 'right' }}>SUM</span>
+            <span style={{ textAlign: 'center' }}>EGNE</span>
+            <span style={{ textAlign: 'right' }}>FANTASY</span>
           </div>
           {totals.map((row, i) => (
             <div key={row.p.id} className="table-row single">
