@@ -9,7 +9,7 @@ export function ReglerScreen() {
     <div className="screen scroll">
       <div className="screen-pad">
         <div>
-          <Eyebrow>REGELBOK</Eyebrow>
+          <Eyebrow>REGLER</Eyebrow>
           <H1>Sånn funker det</H1>
         </div>
 
@@ -21,9 +21,9 @@ export function ReglerScreen() {
             marginTop: 14,
           }}
         >
-          Du setter opp et lag på <b>fire av sju</b> medreisende hver dag. Du kan
-          ikke velge deg selv, men du kan velge Stian. Én utpekes som{' '}
-          <b>kaptein</b> og scoren dobles.
+          Du setter opp et lag på <b>fire av de andre</b> for lørdag. Du kan
+          ikke velge deg selv, men du kan velge Stian. Du peker selv ut hvem
+          som er <b>kaptein</b> — kapteinen sin score dobles.
         </p>
         <p
           style={{
@@ -32,29 +32,9 @@ export function ReglerScreen() {
             lineHeight: 1.5,
           }}
         >
-          Folk samler atferdspoeng i virkeligheten. Martin registrerer dem
-          fortløpende. Dine poeng er summen av de fire valgte sin score den
-          dagen.
+          Du samler poeng basert på hva de fire du valgte faktisk gjør. Martin
+          registrerer hendelsene underveis.
         </p>
-
-        <div className="rule-section">
-          <Eyebrow style={{ marginBottom: 6 }}>FRIST</Eyebrow>
-          <ul className="bullet">
-            <li>
-              <b>Lørdag</b> låses kl. 09:00
-            </li>
-          </ul>
-          <div
-            style={{
-              fontFamily: 'var(--body)',
-              fontSize: 14,
-              color: 'var(--muted)',
-              marginTop: 6,
-            }}
-          >
-            Misser du fristen, beholder du forrige lag — kaptein og alt.
-          </div>
-        </div>
 
         {CATEGORIES.map((cat) => {
           const items: Rule[] =

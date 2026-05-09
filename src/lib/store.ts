@@ -210,6 +210,9 @@ class FirestoreStore {
 
   async setTeam(userId: string, dayId: DayId, team: Team) {
     if (!db) return;
+    if (!this.teams[userId]) this.teams[userId] = emptyTeams();
+    this.teams[userId] = { ...this.teams[userId], [dayId]: team };
+    this.emit();
     await setDoc(doc(db, 'teams', `${userId}_${dayId}`), team);
   }
 

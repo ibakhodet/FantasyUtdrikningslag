@@ -20,7 +20,7 @@ export function TabellScreen() {
   return (
     <div className="screen scroll">
       <div className="screen-pad">
-        <Eyebrow>LIVE · OPPDATERES UNDERVEIS</Eyebrow>
+        <Eyebrow>LIVE</Eyebrow>
         <H1>Tabellen</H1>
 
         {podium.length >= 3 && (

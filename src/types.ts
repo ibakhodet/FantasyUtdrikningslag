@@ -23,9 +23,6 @@ export type RuleCategory =
   | 'gruppe'
   | 'stian'
   | 'pluss'
-  | 'sosial'
-  | 'mod'
-  | 'oslo'
   | 'natt'
   | 'minus'
   | 'egen';

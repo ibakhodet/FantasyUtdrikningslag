@@ -72,22 +72,22 @@ export function ProfilScreen({ userId }: Props) {
           </div>
         </div>
 
-        <div
-          className="card"
-          style={{ padding: 18, marginTop: 18, textAlign: 'left' }}
-        >
-          <Eyebrow>STIAN OG DEG</Eyebrow>
+        {me.bio ? (
           <div
-            style={{
-              fontFamily: 'var(--body)',
-              fontSize: 14,
-              marginTop: 6,
-              lineHeight: 1.5,
-            }}
+            className="card"
+            style={{ padding: 18, marginTop: 18, textAlign: 'left' }}
           >
-            {me.bio}
+            <div
+              style={{
+                fontFamily: 'var(--body)',
+                fontSize: 14,
+                lineHeight: 1.5,
+              }}
+            >
+              {me.bio}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {myEvents.length > 0 && (
           <div

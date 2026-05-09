@@ -8,17 +8,6 @@ export function ProgramScreen() {
       <div className="screen-pad">
         <Eyebrow>OSLO · LØRDAG 30. MAI</Eyebrow>
         <H1>Programmet</H1>
-        <p
-          style={{
-            fontFamily: 'var(--body)',
-            fontSize: 15,
-            color: 'var(--muted)',
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          Stian vet kun at han skal "en tur". Resten er hemmelig.
-        </p>
 
         {DAYS.map((d) => {
           const items = PROGRAM.filter((p) => p.day === d.id);
