@@ -35,10 +35,13 @@ jobs:
           publish_dir: ./dist
           publish_branch: gh-pages
       - name: Deploy Firestore rules
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
         env:
-          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/sa.json
+          if [ -z "$FIREBASE_SA" ]; then
+            echo "No FIREBASE_SERVICE_ACCOUNT secret — skipping rules deployment."
+            exit 0
+          fi
+          echo "$FIREBASE_SA" > /tmp/sa.json
           GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json npx firebase-tools@latest deploy --only firestore:rules --project fantasy-stian --non-interactive
           rm /tmp/sa.json
