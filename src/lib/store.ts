@@ -23,6 +23,12 @@ function emptyTeams(): Teams {
   };
 }
 
+// Stable reference for empty state — useSyncExternalStore requires snapshots
+// to be reference-stable, otherwise React throws and blanks the app.
+const EMPTY_TEAMS: Teams = Object.freeze({
+  lor: Object.freeze({ players: [] as string[], captain: null }) as Team,
+}) as Teams;
+
 // ---- localStorage backed store with subscription ----
 
 type Listener = () => void;
@@ -65,7 +71,7 @@ class LocalStore {
   }
 
   getEvents = () => this.events;
-  getTeams = (userId: string): Teams => this.teams[userId] ?? emptyTeams();
+  getTeams = (userId: string): Teams => this.teams[userId] ?? EMPTY_TEAMS;
   getCustomRules = () => this.customRules;
 
   addEvent(ev: Omit<ScoreEvent, 'id' | 'ts'>) {
@@ -172,7 +178,7 @@ class FirestoreStore {
   }
 
   getEvents = () => this.events;
-  getTeams = (userId: string): Teams => this.teams[userId] ?? emptyTeams();
+  getTeams = (userId: string): Teams => this.teams[userId] ?? EMPTY_TEAMS;
   getCustomRules = () => this.customRules;
 
   async addEvent(ev: Omit<ScoreEvent, 'id' | 'ts'>) {
@@ -232,8 +238,8 @@ export function useEvents(): ScoreEvent[] {
 export function useTeams(userId: string | null): Teams {
   const teams = useSyncExternalStore(
     store.subscribe,
-    () => (userId ? store.getTeams(userId) : emptyTeams()),
-    () => emptyTeams(),
+    () => (userId ? store.getTeams(userId) : EMPTY_TEAMS),
+    () => EMPTY_TEAMS,
   );
   return teams;
 }
