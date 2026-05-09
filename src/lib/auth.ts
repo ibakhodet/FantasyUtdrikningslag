@@ -26,7 +26,7 @@ const EMAIL_FOR_LINK_KEY = 'fsu:emailForLink';
 
 export function useFirebaseAuth(): AuthState {
   const [state, setState] = useState<AuthState>({
-    loading: FIREBASE_ENABLED,
+    loading: false,
     user: null,
     playerId: null,
     unknownEmail: null,
