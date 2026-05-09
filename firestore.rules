@@ -1,20 +1,32 @@
 rules_version = '2';
 
-// Tilpass disse senere når du har auth på plass.
-// For nå: åpen lese, kun innloggede kan skrive.
+// Privat utdrikningslag-app for 7 venner. Kun innloggede kan lese,
+// kun Martin (admin) kan skrive eventer.
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isMartin() {
+      return isSignedIn() && request.auth.token.email == 'marteri9@gmail.com';
+    }
+
     match /events/{doc} {
-      allow read: if true;
-      allow write: if true; // TODO: lås til admin når Auth er på
+      allow read: if isSignedIn();
+      allow create, update, delete: if isMartin();
     }
+
     match /teams/{doc} {
-      allow read: if true;
-      allow write: if true; // TODO: lås til eier
+      allow read: if isSignedIn();
+      // Doc-id er `${playerId}_${dayId}`. Inntil vi har en users-collection
+      // som mapper Firebase UID → playerId, lar vi alle innloggede skrive
+      // sitt eget lag. Risikoen er lav (7 venner).
+      allow write: if isSignedIn();
     }
+
     match /users/{uid} {
-      allow read: if true;
-      allow write: if true;
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == uid;
     }
   }
 }

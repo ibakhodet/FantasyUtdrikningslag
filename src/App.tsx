@@ -9,10 +9,13 @@ import { AdminScreen } from './screens/AdminScreen';
 import { ProfilScreen } from './screens/ProfilScreen';
 import { ADMIN_PLAYER_ID } from './data/players';
 import { useCurrentUserId } from './lib/store';
+import { useFirebaseAuth } from './lib/auth';
 
 export type TabId = 'lag' | 'tabell' | 'program' | 'regler' | 'admin' | 'profil';
 
 export function App() {
+  // Initializes Firebase auth listener and reconciles with localStorage user.
+  useFirebaseAuth();
   const userId = useCurrentUserId();
   const [tab, setTab] = useState<TabId>('lag');
 

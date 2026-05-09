@@ -1,7 +1,8 @@
 import { Avatar } from '../components/Avatar';
 import { Eyebrow, fmtPts, pointsColor } from '../components/ui';
 import { PEOPLE_BY_ID, PLAYERS } from '../data/players';
-import { setCurrentUserId, totalsByPlayer, useEvents } from '../lib/store';
+import { totalsByPlayer, useEvents } from '../lib/store';
+import { logout } from '../lib/auth';
 
 interface Props {
   userId: string;
@@ -141,7 +142,7 @@ export function ProfilScreen({ userId }: Props) {
           style={{ marginTop: 22, width: '100%' }}
           onClick={() => {
             sessionStorage.removeItem('fsu:adminUnlocked');
-            setCurrentUserId(null);
+            void logout();
           }}
         >
           Logg ut
