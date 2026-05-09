@@ -4,6 +4,11 @@ import { Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
 import { PEOPLE_BY_ID, PLAYERS } from '../data/players';
 import { fantasyTotalByUser, totalsByPlayer, useAllTeams, useEvents } from '../lib/store';
 
+function tiedRank(sorted: { total: number }[], i: number): number {
+  const score = sorted[i].total;
+  return sorted.findIndex((r) => r.total === score) + 1;
+}
+
 export function TabellScreen() {
   const events = useEvents();
   const allTeams = useAllTeams();
@@ -93,7 +98,7 @@ export function TabellScreen() {
           </div>
           {totals.map((row, i) => (
             <div key={row.p.id} className="table-row single">
-              <span className="rank">{i + 1}</span>
+              <span className="rank">{tiedRank(totals, i)}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Avatar id={row.p.id} size={32} />
                 <span

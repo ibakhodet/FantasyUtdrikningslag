@@ -18,11 +18,11 @@ export function ProfilScreen({ userId }: Props) {
   const myEvents = events.filter((e) => e.playerId === userId);
 
   const place = useMemo(() => {
-    const ranked = PLAYERS.map((p) => ({
-      id: p.id,
-      score: fantasyTotalByUser(p.id, allTeams, rawTotals),
-    })).sort((a, b) => b.score - a.score);
-    return ranked.findIndex((r) => r.id === userId) + 1;
+    const myScore = fantasyTotalByUser(userId, allTeams, rawTotals);
+    const higher = PLAYERS.filter(
+      (p) => fantasyTotalByUser(p.id, allTeams, rawTotals) > myScore,
+    ).length;
+    return higher + 1;
   }, [allTeams, rawTotals, userId]);
 
   if (!me) return null;

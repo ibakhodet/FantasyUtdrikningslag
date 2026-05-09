@@ -644,6 +644,11 @@ function EventsTab() {
   );
 }
 
+function fasitRank(sorted: { fantasyTotal: number }[], i: number): number {
+  const score = sorted[i].fantasyTotal;
+  return sorted.findIndex((r) => r.fantasyTotal === score) + 1;
+}
+
 function FasitTab() {
   const events = useEvents();
   const allTeams = useAllTeams();
@@ -669,7 +674,8 @@ function FasitTab() {
   );
 
   const hasScores = standings.some((r) => r.fantasyTotal !== 0);
-  const winner = standings[0];
+  const topScore = standings[0]?.fantasyTotal ?? 0;
+  const winners = hasScores ? standings.filter((r) => r.fantasyTotal === topScore) : [];
 
   return (
     <>
@@ -679,12 +685,12 @@ function FasitTab() {
           style={{
             fontFamily: 'var(--display)',
             fontWeight: 400,
-            fontSize: 38,
+            fontSize: winners.length > 1 ? 28 : 38,
             lineHeight: 1.1,
             marginTop: 10,
           }}
         >
-          {hasScores ? winner.p.name : '—'}
+          {winners.length > 0 ? winners.map((w) => w.p.name).join(' & ') : '—'}
         </div>
         <div
           style={{
@@ -695,7 +701,7 @@ function FasitTab() {
             marginTop: 6,
           }}
         >
-          {fmtPts(hasScores ? winner.fantasyTotal : 0)}
+          {fmtPts(hasScores ? topScore : 0)}
         </div>
         <div
           style={{
@@ -705,7 +711,11 @@ function FasitTab() {
             marginTop: 4,
           }}
         >
-          {hasScores ? 'Fantasy-vinner 🎉' : 'Ingen poeng registrert ennå.'}
+          {winners.length > 1
+            ? 'Delt førsteplass 🎉'
+            : winners.length === 1
+              ? 'Fantasy-vinner 🎉'
+              : 'Ingen poeng registrert ennå.'}
         </div>
       </div>
 
@@ -713,7 +723,8 @@ function FasitTab() {
         <Eyebrow style={{ marginBottom: 12 }}>SLUTTRESULTAT · FANTASY</Eyebrow>
         {standings.map((row, i) => {
           const team = row.team;
-          const isWinner = i === 0 && hasScores;
+          const rank = fasitRank(standings, i);
+          const isWinner = rank === 1 && hasScores;
           return (
             <div
               key={row.p.id}
@@ -738,7 +749,7 @@ function FasitTab() {
                     flexShrink: 0,
                   }}
                 >
-                  {i + 1}
+                  {rank}
                 </span>
                 <Avatar id={row.p.id} size={40} ring={isWinner} />
                 <div style={{ flex: 1, minWidth: 0 }}>
