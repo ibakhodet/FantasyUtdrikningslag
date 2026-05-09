@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Tilpass disse senere når du har auth på plass.
+// For nå: åpen lese, kun innloggede kan skrive.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /events/{doc} {
+      allow read: if true;
+      allow write: if true; // TODO: lås til admin når Auth er på
+    }
+    match /teams/{doc} {
+      allow read: if true;
+      allow write: if true; // TODO: lås til eier
+    }
+    match /users/{uid} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}
