@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
   GoogleAuthProvider,
-  getRedirectResult,
   isSignInWithEmailLink,
   onAuthStateChanged,
   sendSignInLinkToEmail,
   signInWithEmailLink,
-  signInWithRedirect,
+  signInWithPopup,
   signOut,
   type User,
 } from 'firebase/auth';
@@ -39,12 +38,6 @@ export function useFirebaseAuth(): AuthState {
       setState({ loading: false, user: null, playerId: null, unknownEmail: null, magicLinkError: null });
       return;
     }
-
-    // Handle Google redirect result (signInWithRedirect flow).
-    getRedirectResult(auth).catch((err: unknown) => {
-      const msg = err instanceof Error ? err.message : 'Innlogging feilet.';
-      setState((s) => ({ ...s, magicLinkError: msg }));
-    });
 
     // Complete magic-link sign-in if we landed here via the email link.
     if (isSignInWithEmailLink(auth, window.location.href)) {
@@ -88,9 +81,15 @@ export function useFirebaseAuth(): AuthState {
   return state;
 }
 
-export function loginWithGoogle() {
+export async function loginWithGoogle() {
   if (!auth) return;
-  signInWithRedirect(auth, provider);
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code ?? '';
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+    throw err;
+  }
 }
 
 export async function sendMagicLink(email: string) {
