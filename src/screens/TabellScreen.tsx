@@ -4,9 +4,10 @@ import { Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
 import { PEOPLE_BY_ID, PLAYERS } from '../data/players';
 import { fantasyTotalByUser, totalsByPlayer, useAllTeams, useEvents } from '../lib/store';
 
-function tiedRank(sorted: { total: number }[], i: number): number {
-  const score = sorted[i].total;
-  return sorted.findIndex((r) => r.total === score) + 1;
+function tiedRank(sorted: { total: number; rawPts: number }[], i: number): number {
+  const allZero = sorted.every((r) => r.total === 0);
+  const score = allZero ? sorted[i].rawPts : sorted[i].total;
+  return sorted.findIndex((r) => (allZero ? r.rawPts : r.total) === score) + 1;
 }
 
 export function TabellScreen() {
