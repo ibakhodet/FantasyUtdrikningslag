@@ -1,29 +1,23 @@
 rules_version = '2';
 
-// Privat utdrikningslag-app for 7 venner. Kun innloggede kan lese,
-// kun Martin (admin) kan skrive eventer og egne regler.
+// Privat app for 7 venner. Autentisering håndterer tilgang.
+// Admin-tilgang styres av PIN-kode i selve appen.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedIn() {
       return request.auth != null;
     }
-    function isMartin() {
-      return isSignedIn() && request.auth.token.email == 'marteri9@gmail.com';
-    }
 
     match /events/{doc} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isMartin();
+      allow read, write: if isSignedIn();
     }
 
     match /teams/{doc} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read, write: if isSignedIn();
     }
 
     match /customRules/{doc} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isMartin();
+      allow read, write: if isSignedIn();
     }
 
     match /users/{uid} {
