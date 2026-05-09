@@ -24,7 +24,7 @@ export const EMAIL_TO_PLAYER: Record<string, string> = {
   'stian.schul@gmail.com': 'stian',
   'marteri9@gmail.com':    'martin',
   'eriktrei@gmail.com':    'erik',
-  // 'eirik@example.com':  'eirik',   // TODO: legg inn når du har den
+  'eirpedersen@gmail.com': 'eirik',
   // 'erlend@example.com': 'erlend',  // TODO
   // 'sondre@example.com': 'sondre',  // TODO
   // 'thom@example.com':   'thom',    // TODO
