@@ -86,19 +86,7 @@ export function SplashScreen() {
             marginTop: 8,
           }}
         >
-          Stian sett
-        </h1>
-        <h1
-          className="h1"
-          style={{
-            fontSize: 38,
-            lineHeight: 0.95,
-            fontStyle: 'italic',
-            color: 'var(--accent)',
-            fontWeight: 400,
-          }}
-        >
-          utdrekningslag
+          Utdrikningslag
         </h1>
         <p
           style={{
@@ -110,8 +98,8 @@ export function SplashScreen() {
             padding: '0 14px',
           }}
         >
-          Lag dæ ditt daglige vinnerlag, og tjen ekte poeng førr oppførselen til
-          de enkelte.
+          Lag dæ lørdagens vinnerlag, og få poeng utfra den ekte oppførselen
+          te folk.
         </p>
       </div>
 

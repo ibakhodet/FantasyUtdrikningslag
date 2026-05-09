@@ -27,7 +27,9 @@ export function Avatar({ id, size = 56, ring = false, captain = false, dim = fal
           height: size,
           borderRadius: '50%',
           background: p.color,
-          backgroundImage: p.photo ? `url(${p.photo})` : undefined,
+          backgroundImage: p.photo
+            ? `url(${import.meta.env.BASE_URL}${p.photo})`
+            : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           boxShadow:
