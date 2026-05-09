@@ -185,29 +185,63 @@ class FirestoreStore {
 
   async addEvent(ev: Omit<ScoreEvent, 'id' | 'ts'>) {
     if (!db) return;
-    await addDoc(collection(db, 'events'), { ...ev, ts: Date.now(), serverTs: serverTimestamp() });
+    const temp: ScoreEvent = { ...ev, id: `tmp-${crypto.randomUUID()}`, ts: Date.now() };
+    this.events = [temp, ...this.events];
+    this.emit();
+    try {
+      await addDoc(collection(db, 'events'), { ...ev, ts: temp.ts, serverTs: serverTimestamp() });
+    } catch (err) {
+      this.events = this.events.filter((e) => e.id !== temp.id);
+      this.emit();
+      window.alert('Feil: kunne ikke registrere poeng.\n' + (err as Error).message);
+    }
   }
 
   async addGroupEvents(common: Omit<ScoreEvent, 'id' | 'ts' | 'playerId' | 'groupBatchId'>) {
     if (!db) return;
     const batchId = crypto.randomUUID();
     const ts = Date.now();
-    await Promise.all(
-      PLAYERS.map((p) =>
-        addDoc(collection(db!, 'events'), {
-          ...common,
-          playerId: p.id,
-          ts,
-          groupBatchId: batchId,
-          serverTs: serverTimestamp(),
-        }),
-      ),
-    );
+    const temps: ScoreEvent[] = PLAYERS.map((p) => ({
+      ...common,
+      playerId: p.id,
+      id: `tmp-${crypto.randomUUID()}`,
+      ts,
+      groupBatchId: batchId,
+    }));
+    this.events = [...temps, ...this.events];
+    this.emit();
+    try {
+      await Promise.all(
+        PLAYERS.map((p) =>
+          addDoc(collection(db!, 'events'), {
+            ...common,
+            playerId: p.id,
+            ts,
+            groupBatchId: batchId,
+            serverTs: serverTimestamp(),
+          }),
+        ),
+      );
+    } catch (err) {
+      const tempIds = new Set(temps.map((t) => t.id));
+      this.events = this.events.filter((e) => !tempIds.has(e.id));
+      this.emit();
+      window.alert('Feil: kunne ikke registrere gruppepoeng.\n' + (err as Error).message);
+    }
   }
 
   async removeEvent(id: string) {
     if (!db) return;
-    await deleteDoc(doc(db, 'events', id));
+    const prev = this.events;
+    this.events = this.events.filter((e) => e.id !== id);
+    this.emit();
+    try {
+      await deleteDoc(doc(db, 'events', id));
+    } catch (err) {
+      this.events = prev;
+      this.emit();
+      window.alert('Feil: kunne ikke slette hendelse.\n' + (err as Error).message);
+    }
   }
 
   async setTeam(userId: string, dayId: DayId, team: Team) {

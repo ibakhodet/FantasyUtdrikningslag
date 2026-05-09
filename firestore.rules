@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // Privat utdrikningslag-app for 7 venner. Kun innloggede kan lese,
-// kun Martin (admin) kan skrive eventer.
+// kun Martin (admin) kan skrive eventer og egne regler.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedIn() {
@@ -18,10 +18,12 @@ service cloud.firestore {
 
     match /teams/{doc} {
       allow read: if isSignedIn();
-      // Doc-id er `${playerId}_${dayId}`. Inntil vi har en users-collection
-      // som mapper Firebase UID → playerId, lar vi alle innloggede skrive
-      // sitt eget lag. Risikoen er lav (7 venner).
       allow write: if isSignedIn();
+    }
+
+    match /customRules/{doc} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isMartin();
     }
 
     match /users/{uid} {
