@@ -23,7 +23,6 @@ export type RuleCategory =
   | 'gruppe'
   | 'stian'
   | 'pluss'
-  | 'natt'
   | 'minus'
   | 'egen';
 

@@ -21,9 +21,8 @@ export function ReglerScreen() {
             marginTop: 14,
           }}
         >
-          Du setter opp et lag på <b>fire av de andre</b> for lørdag. Du kan
-          ikke velge deg selv, men du kan velge Stian. Du peker selv ut hvem
-          som er <b>kaptein</b> — kapteinen sin score dobles.
+          Du setter opp et lag på <b>fire av de andre</b> for lørdag. Du peker
+          selv ut hvem som er <b>kaptein</b> — kapteinen sin score dobles.
         </p>
         <p
           style={{
@@ -32,8 +31,8 @@ export function ReglerScreen() {
             lineHeight: 1.5,
           }}
         >
-          Du samler poeng basert på hva de fire du valgte faktisk gjør. Martin
-          registrerer hendelsene underveis.
+          Du samler poeng basert på hva de fire du valgte faktisk gjør. Fortell
+          Martin om hendelser, så registrerer han dem underveis.
         </p>
 
         {CATEGORIES.map((cat) => {
