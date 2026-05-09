@@ -1,9 +1,16 @@
-import type { Day } from '../types';
+import type { Day, DayId } from '../types';
 
-export const DAYS: Day[] = [
-  { id: 'fre', label: 'Fre', long: 'Fredag',  date: '17. juli', deadline: '12:00', theme: 'Ankomst Oslo' },
-  { id: 'lor', label: 'Lør', long: 'Lørdag',  date: '18. juli', deadline: '09:00', theme: 'Hoveddagen' },
-  { id: 'son', label: 'Søn', long: 'Søndag',  date: '19. juli', deadline: '09:00', theme: 'Restene' },
-];
+// Hele appen handler om bryllupsdagen - lørdag.
+export const SATURDAY_ID: DayId = 'lor';
 
-export const DAYS_BY_ID: Record<string, Day> = Object.fromEntries(DAYS.map((d) => [d.id, d]));
+export const SATURDAY: Day = {
+  id: 'lor',
+  label: 'Lør',
+  long: 'Lørdag',
+  date: '18. juli',
+  deadline: '09:00',
+  theme: 'Hoveddagen',
+};
+
+export const DAYS: Day[] = [SATURDAY];
+export const DAYS_BY_ID: Record<string, Day> = { lor: SATURDAY };

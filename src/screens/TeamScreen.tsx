@@ -1,48 +1,45 @@
-import { useState } from 'react';
 import { Avatar } from '../components/Avatar';
-import { DayTabs, Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
+import { Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
 import { ALL_PEOPLE, PEOPLE_BY_ID, STIAN } from '../data/players';
-import { DAYS_BY_ID } from '../data/days';
+import { SATURDAY, SATURDAY_ID } from '../data/days';
 import { isDayLocked } from '../lib/locking';
 import { setTeam, useEvents, useTeams } from '../lib/store';
-import type { DayId } from '../types';
 
 interface Props {
   userId: string;
 }
 
 export function TeamScreen({ userId }: Props) {
-  const [activeDay, setActiveDay] = useState<DayId>('lor');
-  const day = DAYS_BY_ID[activeDay];
+  const day = SATURDAY;
   const teams = useTeams(userId);
   const events = useEvents();
 
-  const inTeam = teams[activeDay];
+  const inTeam = teams[SATURDAY_ID];
   const candidates = ALL_PEOPLE.filter((p) => p.id !== userId); // can pick Stian, not self
-  const isLocked = isDayLocked(activeDay);
+  const isLocked = isDayLocked(SATURDAY_ID);
 
   function togglePlayer(pid: string) {
     if (isLocked) return;
     const cur = inTeam.players;
     if (cur.includes(pid)) {
       const next = cur.filter((x) => x !== pid);
-      setTeam(userId, activeDay, {
+      setTeam(userId, SATURDAY_ID, {
         players: next,
         captain: inTeam.captain === pid ? null : inTeam.captain,
       });
     } else if (cur.length < 4) {
-      setTeam(userId, activeDay, { ...inTeam, players: [...cur, pid] });
+      setTeam(userId, SATURDAY_ID, { ...inTeam, players: [...cur, pid] });
     }
   }
   function setCap(pid: string) {
     if (isLocked) return;
     if (!inTeam.players.includes(pid)) return;
-    setTeam(userId, activeDay, { ...inTeam, captain: pid });
+    setTeam(userId, SATURDAY_ID, { ...inTeam, captain: pid });
   }
 
   function dayPts(pid: string) {
     return events
-      .filter((e) => e.playerId === pid && e.dayId === activeDay)
+      .filter((e) => e.playerId === pid && e.dayId === SATURDAY_ID)
       .reduce((s, e) => s + e.pts, 0);
   }
 
@@ -76,8 +73,6 @@ export function TeamScreen({ userId }: Props) {
           </div>
         </div>
 
-        <DayTabs activeDay={activeDay} setActiveDay={setActiveDay} />
-
         <div className="card" style={{ marginTop: 20, padding: '18px 16px 14px' }}>
           <div
             style={{
@@ -87,9 +82,7 @@ export function TeamScreen({ userId }: Props) {
               marginBottom: 12,
             }}
           >
-            <Eyebrow>
-              {day.theme.toUpperCase()} · {day.label.toUpperCase()}
-            </Eyebrow>
+            <Eyebrow>{day.theme.toUpperCase()}</Eyebrow>
             <Eyebrow>{inTeam.players.length}/4</Eyebrow>
           </div>
           <div
@@ -145,7 +138,9 @@ export function TeamScreen({ userId }: Props) {
             })}
           </div>
           {isLocked ? (
-            <div className="locked-banner">🔒 Låst, fristen er passert</div>
+            <div className="locked-banner" role="status" aria-live="polite">
+              🔒 Låst, fristen er passert
+            </div>
           ) : (
             <div
               style={{
@@ -197,6 +192,7 @@ export function TeamScreen({ userId }: Props) {
                 style={{
                   borderColor: inT ? 'var(--accent)' : 'transparent',
                   opacity: inT ? 0.45 : 1,
+                  minHeight: 96,
                 }}
                 onClick={() => togglePlayer(p.id)}
               >
@@ -249,7 +245,7 @@ export function TeamScreen({ userId }: Props) {
               <div
                 style={{
                   fontFamily: 'var(--display)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: 16,
                 }}
               >

@@ -1,7 +1,10 @@
 import { Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
 import { CATEGORIES, RULES } from '../data/rules';
+import { useCustomRules } from '../lib/store';
+import type { Rule } from '../types';
 
 export function ReglerScreen() {
+  const customRules = useCustomRules();
   return (
     <div className="screen scroll">
       <div className="screen-pad">
@@ -35,13 +38,10 @@ export function ReglerScreen() {
         </p>
 
         <div className="rule-section">
-          <Eyebrow style={{ marginBottom: 6 }}>FRISTER</Eyebrow>
+          <Eyebrow style={{ marginBottom: 6 }}>FRIST</Eyebrow>
           <ul className="bullet">
             <li>
-              <b>Fredag</b> låses kl. 12:00
-            </li>
-            <li>
-              <b>Lørdag, søndag</b> låses kl. 09:00
+              <b>Lørdag</b> låses kl. 09:00
             </li>
           </ul>
           <div
@@ -52,13 +52,15 @@ export function ReglerScreen() {
               marginTop: 6,
             }}
           >
-            Misser du fristen, videreføres laget fra i går automatisk — kaptein
-            og alt.
+            Misser du fristen, beholder du forrige lag — kaptein og alt.
           </div>
         </div>
 
         {CATEGORIES.map((cat) => {
-          const items = RULES.filter((r) => r.cat === cat.id);
+          const items: Rule[] =
+            cat.id === 'egen'
+              ? customRules
+              : RULES.filter((r) => r.cat === cat.id);
           if (!items.length) return null;
           return (
             <div key={cat.id} className="rule-section">

@@ -10,17 +10,16 @@ import {
 } from 'firebase/firestore';
 import { FIREBASE_ENABLED, db } from './firebase';
 import { PLAYERS } from '../data/players';
-import type { DayId, ScoreEvent, Team, Teams } from '../types';
+import type { CustomRule, DayId, ScoreEvent, Team, Teams } from '../types';
 
 const EVENTS_KEY = 'fsu:events';
 const TEAMS_KEY = 'fsu:teams';
+const CUSTOM_RULES_KEY = 'fsu:customRules';
 const USER_KEY = 'fsu:userId';
 
 function emptyTeams(): Teams {
   return {
-    fre: { players: [], captain: null },
     lor: { players: [], captain: null },
-    son: { players: [], captain: null },
   };
 }
 
@@ -31,6 +30,7 @@ type Listener = () => void;
 class LocalStore {
   private events: ScoreEvent[] = [];
   private teams: Record<string, Teams> = {}; // userId -> Teams
+  private customRules: CustomRule[] = [];
   private listeners = new Set<Listener>();
 
   constructor() {
@@ -39,6 +39,8 @@ class LocalStore {
       if (ev) this.events = JSON.parse(ev);
       const tm = localStorage.getItem(TEAMS_KEY);
       if (tm) this.teams = JSON.parse(tm);
+      const cr = localStorage.getItem(CUSTOM_RULES_KEY);
+      if (cr) this.customRules = JSON.parse(cr);
     } catch {
       /* empty */
     }
@@ -56,6 +58,7 @@ class LocalStore {
     try {
       localStorage.setItem(EVENTS_KEY, JSON.stringify(this.events));
       localStorage.setItem(TEAMS_KEY, JSON.stringify(this.teams));
+      localStorage.setItem(CUSTOM_RULES_KEY, JSON.stringify(this.customRules));
     } catch {
       /* empty */
     }
@@ -63,6 +66,7 @@ class LocalStore {
 
   getEvents = () => this.events;
   getTeams = (userId: string): Teams => this.teams[userId] ?? emptyTeams();
+  getCustomRules = () => this.customRules;
 
   addEvent(ev: Omit<ScoreEvent, 'id' | 'ts'>) {
     const full: ScoreEvent = {
@@ -84,6 +88,7 @@ class LocalStore {
       ts,
       groupBatchId: batchId,
     }));
+    // Stian (hovedperson) får også gruppe-poeng — han er en av spillerne nå.
     this.events = [...newEvents, ...this.events];
     this.emit();
   }
@@ -98,6 +103,22 @@ class LocalStore {
     this.teams[userId] = { ...cur, [dayId]: team };
     this.emit();
   }
+
+  addCustomRule(rule: Omit<CustomRule, 'id' | 'createdAt' | 'custom'>) {
+    const full: CustomRule = {
+      ...rule,
+      id: 'custom-' + crypto.randomUUID(),
+      custom: true,
+      createdAt: Date.now(),
+    };
+    this.customRules = [...this.customRules, full];
+    this.emit();
+  }
+
+  removeCustomRule(id: string) {
+    this.customRules = this.customRules.filter((r) => r.id !== id);
+    this.emit();
+  }
 }
 
 export const localStore = new LocalStore();
@@ -107,6 +128,7 @@ export const localStore = new LocalStore();
 class FirestoreStore {
   private events: ScoreEvent[] = [];
   private teams: Record<string, Teams> = {};
+  private customRules: CustomRule[] = [];
   private listeners = new Set<Listener>();
   private inited = false;
 
@@ -129,6 +151,12 @@ class FirestoreStore {
       this.teams = next;
       this.emit();
     });
+    onSnapshot(collection(db, 'customRules'), (snap) => {
+      this.customRules = snap.docs
+        .map((d) => ({ id: d.id, ...(d.data() as Omit<CustomRule, 'id'>) }))
+        .sort((a, b) => a.createdAt - b.createdAt);
+      this.emit();
+    });
   }
 
   subscribe = (l: Listener) => {
@@ -145,6 +173,7 @@ class FirestoreStore {
 
   getEvents = () => this.events;
   getTeams = (userId: string): Teams => this.teams[userId] ?? emptyTeams();
+  getCustomRules = () => this.customRules;
 
   async addEvent(ev: Omit<ScoreEvent, 'id' | 'ts'>) {
     if (!db) return;
@@ -176,6 +205,20 @@ class FirestoreStore {
   async setTeam(userId: string, dayId: DayId, team: Team) {
     if (!db) return;
     await setDoc(doc(db, 'teams', `${userId}_${dayId}`), team);
+  }
+
+  async addCustomRule(rule: Omit<CustomRule, 'id' | 'createdAt' | 'custom'>) {
+    if (!db) return;
+    await addDoc(collection(db, 'customRules'), {
+      ...rule,
+      custom: true,
+      createdAt: Date.now(),
+    });
+  }
+
+  async removeCustomRule(id: string) {
+    if (!db) return;
+    await deleteDoc(doc(db, 'customRules', id));
   }
 }
 
@@ -211,6 +254,24 @@ export function removeEvent(id: string) {
 
 export function setTeam(userId: string, dayId: DayId, team: Team) {
   return store.setTeam(userId, dayId, team);
+}
+
+export function useCustomRules(): CustomRule[] {
+  return useSyncExternalStore(
+    store.subscribe,
+    store.getCustomRules,
+    store.getCustomRules,
+  );
+}
+
+export function addCustomRule(
+  rule: Omit<CustomRule, 'id' | 'createdAt' | 'custom'>,
+) {
+  return store.addCustomRule(rule);
+}
+
+export function removeCustomRule(id: string) {
+  return store.removeCustomRule(id);
 }
 
 // ---- Current user (player identity) ----
@@ -255,22 +316,6 @@ export function seedDemoIfEmpty() {
 
   // initial scores roughly matching the design mock
   const seed: Array<Omit<ScoreEvent, 'id' | 'ts'>> = [
-    { playerId: 'eirik',  dayId: 'fre', ruleId: 'mod-bestiller',  ruleLabel: 'Bestiller noe ingen andre tør', pts: 15, registeredBy: 'martin' },
-    { playerId: 'eirik',  dayId: 'fre', ruleId: 'sosial-pils',    ruleLabel: 'Spanderer en pils til en',       pts: 10, registeredBy: 'martin' },
-    { playerId: 'eirik',  dayId: 'fre', ruleId: 'pluss-ansvar',   ruleLabel: 'Tar ansvar for gruppa',          pts: 10, registeredBy: 'martin' },
-    { playerId: 'erik',   dayId: 'fre', ruleId: 'mod-bestiller',  ruleLabel: 'Bestiller noe ingen andre tør', pts: 15, registeredBy: 'martin' },
-    { playerId: 'erik',   dayId: 'fre', ruleId: 'stian-angre',    ruleLabel: 'Får Stian til å gjøre noe han angrer på', pts: 30, registeredBy: 'martin' },
-    { playerId: 'erik',   dayId: 'fre', ruleId: 'minus-klager',   ruleLabel: 'Klager',                         pts: -5, registeredBy: 'martin' },
-    { playerId: 'erlend', dayId: 'fre', ruleId: 'natt-sist',      ruleLabel: 'Sist i seng',                    pts: 10, registeredBy: 'martin' },
-    { playerId: 'erlend', dayId: 'fre', ruleId: 'mod-drikker',    ruleLabel: 'Drikker noe ukjent valgt av andre', pts: 20, registeredBy: 'martin' },
-    { playerId: 'martin', dayId: 'fre', ruleId: 'oslo-korsen',    ruleLabel: 'Spør osloværing om veien "korsen"', pts: 5, registeredBy: 'martin' },
-    { playerId: 'martin', dayId: 'fre', ruleId: 'pluss-ansvar',   ruleLabel: 'Tar ansvar for gruppa',          pts: 10, registeredBy: 'martin' },
-    { playerId: 'martin', dayId: 'fre', ruleId: 'sosial-runde',   ruleLabel: 'Spanderer en runde til alle',    pts: 30, registeredBy: 'martin' },
-    { playerId: 'sondre', dayId: 'fre', ruleId: 'minus-mister',   ruleLabel: 'Mister noe (lommebok, telefon, verdighet)', pts: -20, registeredBy: 'martin' },
-    { playerId: 'sondre', dayId: 'fre', ruleId: 'natt-sist',      ruleLabel: 'Sist i seng',                    pts: 10, registeredBy: 'martin' },
-    { playerId: 'thom',   dayId: 'fre', ruleId: 'sosial-alldans', ruleLabel: 'Byr opp til alldans',            pts: 25, registeredBy: 'martin' },
-    { playerId: 'thom',   dayId: 'fre', ruleId: 'sosial-allsang', ruleLabel: 'Byr opp til allsang',            pts: 25, registeredBy: 'martin' },
-
     { playerId: 'eirik',  dayId: 'lor', ruleId: 'pluss-ansvar',   ruleLabel: 'Tar ansvar for gruppa',          pts: 10, registeredBy: 'martin' },
     { playerId: 'eirik',  dayId: 'lor', ruleId: 'stian-baere',    ruleLabel: 'Bærer Stian fra A til B',         pts: 25, registeredBy: 'martin' },
     { playerId: 'erik',   dayId: 'lor', ruleId: 'mod-kastes-ut',  ruleLabel: 'Kastes ut av utested',           pts: 25, registeredBy: 'martin' },
@@ -279,7 +324,6 @@ export function seedDemoIfEmpty() {
     { playerId: 'martin', dayId: 'lor', ruleId: 'sosial-allsang', ruleLabel: 'Byr opp til allsang',            pts: 25, registeredBy: 'martin' },
     { playerId: 'martin', dayId: 'lor', ruleId: 'sosial-pils',    ruleLabel: 'Spanderer en pils til en',       pts: 10, registeredBy: 'martin' },
     { playerId: 'sondre', dayId: 'lor', ruleId: 'minus-klager',   ruleLabel: 'Klager',                         pts: -5, registeredBy: 'martin' },
-    { playerId: 'thom',   dayId: 'lor', ruleId: 'sosial-alldans', ruleLabel: 'Byr opp til alldans',            pts: 25, registeredBy: 'martin' },
     { playerId: 'thom',   dayId: 'lor', ruleId: 'sosial-alldans', ruleLabel: 'Byr opp til alldans',            pts: 25, registeredBy: 'martin' },
     { playerId: 'thom',   dayId: 'lor', ruleId: 'mod-bestiller',  ruleLabel: 'Bestiller noe ingen andre tør', pts: 15, registeredBy: 'martin' },
   ];
@@ -296,7 +340,7 @@ export function eventsForPlayerDay(events: ScoreEvent[], playerId: string, dayId
 export function totalsByPlayer(events: ScoreEvent[]) {
   const out: Record<string, { total: number; perDay: Record<DayId, number> }> = {};
   for (const p of PLAYERS) {
-    out[p.id] = { total: 0, perDay: { fre: 0, lor: 0, son: 0 } };
+    out[p.id] = { total: 0, perDay: { lor: 0 } };
   }
   for (const e of events) {
     if (!out[e.playerId]) continue;

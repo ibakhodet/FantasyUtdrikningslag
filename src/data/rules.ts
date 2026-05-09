@@ -9,6 +9,7 @@ export const CATEGORIES = [
   { id: 'oslo',   label: 'Oslo-knebøy',        sub: 'Bare i hovedstaden' },
   { id: 'natt',   label: 'Natt',               sub: 'Sengetid' },
   { id: 'minus',  label: 'Minus',              sub: 'Ikke gjør dette' },
+  { id: 'egen',   label: 'Egne regler',        sub: 'Lagt til av Martin under turen' },
 ] as const;
 
 export const RULES: Rule[] = [

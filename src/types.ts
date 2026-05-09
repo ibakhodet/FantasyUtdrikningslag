@@ -1,4 +1,4 @@
-export type DayId = 'fre' | 'lor' | 'son';
+export type DayId = 'lor';
 
 export interface Person {
   id: string;
@@ -27,7 +27,8 @@ export type RuleCategory =
   | 'mod'
   | 'oslo'
   | 'natt'
-  | 'minus';
+  | 'minus'
+  | 'egen';
 
 export interface Rule {
   id: string;
@@ -37,6 +38,13 @@ export interface Rule {
   repeat?: boolean;
   highlight?: boolean;
   group?: boolean;
+  custom?: boolean;
+}
+
+export interface CustomRule extends Rule {
+  custom: true;
+  createdBy: string;
+  createdAt: number;
 }
 
 export interface ProgramItem {

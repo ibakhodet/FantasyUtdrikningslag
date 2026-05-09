@@ -21,13 +21,13 @@ export const ADMIN_PLAYER_ID = 'martin';
 // Map Google email → player id. Fyll inn når du har de 7 emailene.
 // Email lookup er case-insensitive.
 export const EMAIL_TO_PLAYER: Record<string, string> = {
-  'stian.schul@gmail.com': 'stian',
-  'marteri9@gmail.com':    'martin',
-  'eriktrei@gmail.com':    'erik',
-  'eirpedersen@gmail.com': 'eirik',
-  // 'erlend@example.com': 'erlend',  // TODO
-  // 'sondre@example.com': 'sondre',  // TODO
-  // 'thom@example.com':   'thom',    // TODO
+  'stian.schul@gmail.com':       'stian',
+  'marteri9@gmail.com':          'martin',
+  'eriktrei@gmail.com':          'erik',
+  'eirpedersen@gmail.com':       'eirik',
+  'erlendrobertsen@icloud.com':  'erlend',
+  'tunlisondre@gmail.com':       'sondre',
+  'thom.r.pedersen@gmail.com':   'thom',
 };
 
 export function lookupPlayerByEmail(email: string | null | undefined): string | null {

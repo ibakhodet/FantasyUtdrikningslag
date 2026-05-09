@@ -4,11 +4,14 @@ import { Eyebrow } from '../components/ui';
 import { ALL_PEOPLE, PLAYERS } from '../data/players';
 import { setCurrentUserId } from '../lib/store';
 import { FIREBASE_ENABLED } from '../lib/firebase';
-import { loginWithGoogle, logout, useFirebaseAuth } from '../lib/auth';
+import { loginWithGoogle, logout, sendMagicLink, useFirebaseAuth } from '../lib/auth';
 
 export function SplashScreen() {
   const auth = useFirebaseAuth();
   const [picking, setPicking] = useState(false);
+  const [magicMode, setMagicMode] = useState(false);
+  const [magicEmail, setMagicEmail] = useState('');
+  const [magicSent, setMagicSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Authenticated, but email isn't mapped to a player.
@@ -52,6 +55,20 @@ export function SplashScreen() {
       await loginWithGoogle();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Noe gikk galt.';
+      setError(msg);
+    }
+  }
+
+  async function handleMagicLink(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const email = magicEmail.trim().toLowerCase();
+    if (!email) return;
+    try {
+      await sendMagicLink(email);
+      setMagicSent(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Kunne ikke sende lenke.';
       setError(msg);
     }
   }
@@ -123,14 +140,95 @@ export function SplashScreen() {
 
       <div>
         {FIREBASE_ENABLED ? (
-          <button
-            className="cta"
-            onClick={handleGoogleLogin}
-            disabled={auth.loading}
-          >
-            <GoogleG />
-            Logg inn med Google
-          </button>
+          magicMode ? (
+            magicSent ? (
+              <div
+                style={{
+                  background: 'var(--card)',
+                  padding: 16,
+                  borderRadius: 14,
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: 'var(--display)',
+                    fontWeight: 600,
+                    fontSize: 17,
+                  }}
+                >
+                  Sjekk mailen din
+                </div>
+                <div
+                  style={{
+                    fontFamily: 'var(--body)',
+                    fontSize: 13,
+                    color: 'var(--muted)',
+                    marginTop: 6,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  En login-lenke ble sendt til <b>{magicEmail}</b>. Åpne den
+                  fra mailen, så er du innlogget.
+                </div>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleMagicLink}
+                style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+              >
+                <input
+                  type="email"
+                  value={magicEmail}
+                  onChange={(e) => setMagicEmail(e.target.value)}
+                  placeholder="din@email.no"
+                  required
+                  autoFocus
+                  style={{
+                    padding: '14px 16px',
+                    border: '1.5px solid transparent',
+                    borderRadius: 12,
+                    background: 'var(--card)',
+                    fontFamily: 'var(--body)',
+                    fontSize: 16,
+                    color: 'var(--ink)',
+                    outline: 'none',
+                  }}
+                />
+                <button type="submit" className="cta">
+                  Send login-lenke
+                </button>
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  onClick={() => {
+                    setMagicMode(false);
+                    setError(null);
+                  }}
+                >
+                  Tilbake
+                </button>
+              </form>
+            )
+          ) : (
+            <>
+              <button
+                className="cta"
+                onClick={handleGoogleLogin}
+                disabled={auth.loading}
+              >
+                <GoogleG />
+                Logg inn med Google
+              </button>
+              <button
+                className="ghost-btn"
+                style={{ width: '100%', marginTop: 10 }}
+                onClick={() => setMagicMode(true)}
+              >
+                Bruk email-lenke i stedet
+              </button>
+            </>
+          )
         ) : (
           <button className="cta" onClick={() => setPicking(true)}>
             Velg spiller (demo-modus)

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
   GoogleAuthProvider,
+  isSignInWithEmailLink,
   onAuthStateChanged,
+  sendSignInLinkToEmail,
+  signInWithEmailLink,
   signInWithPopup,
   signOut,
   type User,
@@ -18,6 +21,7 @@ export interface AuthState {
 }
 
 const provider = new GoogleAuthProvider();
+const EMAIL_FOR_LINK_KEY = 'fsu:emailForLink';
 
 export function useFirebaseAuth(): AuthState {
   const [state, setState] = useState<AuthState>({
@@ -32,6 +36,28 @@ export function useFirebaseAuth(): AuthState {
       setState({ loading: false, user: null, playerId: null, unknownEmail: null });
       return;
     }
+
+    // Complete magic-link sign-in if we landed here via the email link.
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      let email = window.localStorage.getItem(EMAIL_FOR_LINK_KEY);
+      if (!email) {
+        email = window.prompt('Bekreft email-en du ba om login-lenke til:');
+      }
+      if (email) {
+        signInWithEmailLink(auth, email, window.location.href)
+          .then(() => {
+            window.localStorage.removeItem(EMAIL_FOR_LINK_KEY);
+            // Strip the magic-link query params from the URL.
+            const url = new URL(window.location.href);
+            url.search = '';
+            window.history.replaceState({}, '', url.toString());
+          })
+          .catch((err) => {
+            console.error('Magic link sign-in failed', err);
+          });
+      }
+    }
+
     return onAuthStateChanged(auth, (user) => {
       if (!user) {
         setCurrentUserId(null);
@@ -55,6 +81,16 @@ export function useFirebaseAuth(): AuthState {
 export async function loginWithGoogle() {
   if (!auth) return;
   await signInWithPopup(auth, provider);
+}
+
+export async function sendMagicLink(email: string) {
+  if (!auth) return;
+  const url = window.location.origin + window.location.pathname;
+  await sendSignInLinkToEmail(auth, email, {
+    url,
+    handleCodeInApp: true,
+  });
+  window.localStorage.setItem(EMAIL_FOR_LINK_KEY, email);
 }
 
 export async function logout() {

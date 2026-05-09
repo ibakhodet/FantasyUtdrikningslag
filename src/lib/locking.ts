@@ -1,22 +1,15 @@
-import { DAYS_BY_ID } from '../data/days';
 import type { DayId } from '../types';
 
 const LOCK_OVERRIDE_KEY = 'fsu:lockOverride';
 
 const DEADLINES_2026: Record<DayId, Date> = {
-  fre: new Date('2026-07-17T12:00:00+02:00'),
   lor: new Date('2026-07-18T09:00:00+02:00'),
-  son: new Date('2026-07-19T09:00:00+02:00'),
 };
 
 export function isDayLocked(dayId: DayId, now: Date = new Date()): boolean {
   const override = readOverride();
   if (override && override[dayId] !== undefined) return override[dayId]!;
   return now >= DEADLINES_2026[dayId];
-}
-
-export function deadlineLabel(dayId: DayId): string {
-  return DAYS_BY_ID[dayId].deadline;
 }
 
 function readOverride(): Partial<Record<DayId, boolean>> | null {

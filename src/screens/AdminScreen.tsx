@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Avatar } from '../components/Avatar';
-import { DayTabs, Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
+import { Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
 import { ALL_PEOPLE, PEOPLE_BY_ID, PLAYERS, ADMIN_PLAYER_ID } from '../data/players';
-import { DAYS } from '../data/days';
+import { SATURDAY, SATURDAY_ID } from '../data/days';
 import { RULES } from '../data/rules';
 import {
+  addCustomRule,
   addEvent,
   addGroupEvents,
+  removeCustomRule,
   removeEvent,
+  useCustomRules,
   useEvents,
 } from '../lib/store';
-import { getLockOverrides, isDayLocked, setLockOverride } from '../lib/locking';
-import type { DayId } from '../types';
+import { isDayLocked, setLockOverride } from '../lib/locking';
+import type { Rule } from '../types';
 
 const ADMIN_PIN = (import.meta.env.VITE_ADMIN_PIN as string | undefined) || '1234';
 const SESSION_KEY = 'fsu:adminUnlocked';
@@ -40,8 +43,7 @@ export function AdminScreen({ userId }: Props) {
               lineHeight: 1.5,
             }}
           >
-            Kun Martin har tilgang til kontrollrommet. Logg inn som Martin om du
-            er han.
+            Kun Martin har tilgang til kontrollrommet.
           </p>
         </div>
       </div>
@@ -71,10 +73,11 @@ function PinGate({ onPass }: { onPass: () => void }) {
       if (pin === ADMIN_PIN) onPass();
       else {
         setError(true);
-        setTimeout(() => {
+        const t = setTimeout(() => {
           setPin('');
           setError(false);
         }, 800);
+        return () => clearTimeout(t);
       }
     }
   }, [pin, onPass]);
@@ -127,7 +130,7 @@ function PinGate({ onPass }: { onPass: () => void }) {
   );
 }
 
-type Tab = 'poeng' | 'gruppe' | 'events' | 'frister';
+type Tab = 'poeng' | 'gruppe' | 'regler' | 'events' | 'frist';
 
 function AdminPanel() {
   const [tab, setTab] = useState<Tab>('poeng');
@@ -143,8 +146,9 @@ function AdminPanel() {
             [
               ['poeng', 'Poeng'],
               ['gruppe', 'Gruppe'],
-              ['events', 'Events'],
-              ['frister', 'Frister'],
+              ['regler', 'Regler'],
+              ['events', 'Logg'],
+              ['frist', 'Frist'],
             ] as const
           ).map(([k, lbl]) => (
             <button
@@ -159,8 +163,9 @@ function AdminPanel() {
 
         {tab === 'poeng' && <PoengTab />}
         {tab === 'gruppe' && <GruppeTab />}
+        {tab === 'regler' && <ReglerTab />}
         {tab === 'events' && <EventsTab />}
-        {tab === 'frister' && <FristerTab />}
+        {tab === 'frist' && <FristTab />}
       </div>
     </div>
   );
@@ -168,23 +173,26 @@ function AdminPanel() {
 
 function PoengTab() {
   const events = useEvents();
-  const [day, setDay] = useState<DayId>('lor');
+  const customRules = useCustomRules();
   const [selected, setSelected] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   function dayPts(pid: string) {
     return events
-      .filter((e) => e.playerId === pid && e.dayId === day)
+      .filter((e) => e.playerId === pid && e.dayId === SATURDAY_ID)
       .reduce((s, e) => s + e.pts, 0);
   }
 
-  function register(ruleId: string) {
+  const allRules: Rule[] = useMemo(
+    () => [...RULES.filter((r) => !r.group), ...customRules],
+    [customRules],
+  );
+
+  function register(rule: Rule) {
     if (!selected) return;
-    const rule = RULES.find((r) => r.id === ruleId);
-    if (!rule) return;
     addEvent({
       playerId: selected,
-      dayId: day,
+      dayId: SATURDAY_ID,
       ruleId: rule.id,
       ruleLabel: rule.label,
       pts: rule.pts,
@@ -194,19 +202,9 @@ function PoengTab() {
     setTimeout(() => setToast(null), 1500);
   }
 
-  const individualRules = useMemo(
-    () => RULES.filter((r) => !r.group),
-    [],
-  );
-
   return (
     <>
-      <Eyebrow style={{ marginTop: 22, marginBottom: 10 }}>1. VELG DAG</Eyebrow>
-      <DayTabs activeDay={day} setActiveDay={setDay} />
-
-      <Eyebrow style={{ marginTop: 22, marginBottom: 12 }}>
-        2. VELG SPILLER
-      </Eyebrow>
+      <Eyebrow style={{ marginTop: 22, marginBottom: 12 }}>VELG SPILLER</Eyebrow>
       <div className="admin-grid">
         {ALL_PEOPLE.map((p) => {
           const dPts = dayPts(p.id);
@@ -216,9 +214,7 @@ function PoengTab() {
               key={p.id}
               className="admin-cell"
               onClick={() => setSelected(sel ? null : p.id)}
-              style={{
-                borderColor: sel ? 'var(--accent)' : 'transparent',
-              }}
+              style={{ borderColor: sel ? 'var(--accent)' : 'transparent' }}
             >
               <Avatar id={p.id} size={42} />
               <div
@@ -249,14 +245,14 @@ function PoengTab() {
       {selected ? (
         <div style={{ marginTop: 22 }}>
           <Eyebrow style={{ marginBottom: 10 }}>
-            3. REGISTRER POENG · {PEOPLE_BY_ID[selected].name.toUpperCase()}
+            REGISTRER POENG · {PEOPLE_BY_ID[selected].name.toUpperCase()}
           </Eyebrow>
           <div className="rules-list">
-            {individualRules.map((r) => (
+            {allRules.map((r) => (
               <div
                 key={r.id}
                 className={'rule-row tap' + (r.highlight ? ' hi' : '')}
-                onClick={() => register(r.id)}
+                onClick={() => register(r)}
               >
                 <div
                   style={{
@@ -270,6 +266,15 @@ function PoengTab() {
                   {r.repeat && (
                     <span className="badge-mono"> · flere ganger</span>
                   )}
+                  {r.custom && (
+                    <span
+                      className="badge-mono"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      {' '}
+                      · egen
+                    </span>
+                  )}
                 </div>
                 <span
                   className="num bold"
@@ -280,6 +285,17 @@ function PoengTab() {
               </div>
             ))}
           </div>
+          <p
+            style={{
+              fontFamily: 'var(--body)',
+              fontSize: 12.5,
+              color: 'var(--muted)',
+              marginTop: 8,
+              textAlign: 'center',
+            }}
+          >
+            Trenger du en ny regel? Gå til <b>Regler</b>-fanen.
+          </p>
         </div>
       ) : (
         <div
@@ -301,7 +317,6 @@ function PoengTab() {
 }
 
 function GruppeTab() {
-  const [day, setDay] = useState<DayId>('lor');
   const [toast, setToast] = useState<string | null>(null);
   const groupRules = useMemo(() => RULES.filter((r) => r.group), []);
 
@@ -309,7 +324,7 @@ function GruppeTab() {
     const rule = RULES.find((r) => r.id === ruleId);
     if (!rule) return;
     addGroupEvents({
-      dayId: day,
+      dayId: SATURDAY_ID,
       ruleId: rule.id,
       ruleLabel: rule.label,
       pts: rule.pts,
@@ -321,20 +336,17 @@ function GruppeTab() {
 
   return (
     <>
-      <Eyebrow style={{ marginTop: 22, marginBottom: 10 }}>1. VELG DAG</Eyebrow>
-      <DayTabs activeDay={day} setActiveDay={setDay} />
-
       <p
         style={{
           fontFamily: 'var(--body)',
           fontSize: 14,
           color: 'var(--muted)',
-          marginTop: 18,
+          marginTop: 22,
           lineHeight: 1.5,
         }}
       >
-        Trykk på en gruppeutfordring — alle 6 spillerne får poenget. (Stian er
-        hovedperson og scorer ikke.)
+        Gruppeutfordringer — alle 7 spillerne (inkl. Stian) får poenget i ett
+        trykk.
       </p>
 
       <div className="rules-list" style={{ marginTop: 12 }}>
@@ -366,6 +378,168 @@ function GruppeTab() {
       </div>
 
       {toast && <div className="toast">{toast}</div>}
+    </>
+  );
+}
+
+function ReglerTab() {
+  const customRules = useCustomRules();
+  const [label, setLabel] = useState('');
+  const [pts, setPts] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const trimmed = label.trim();
+    const num = Number(pts);
+    if (!trimmed) return setError('Trenger en tekst.');
+    if (!Number.isInteger(num) || num === 0)
+      return setError('Poeng må være et helt tall (kan være negativt).');
+    addCustomRule({
+      label: trimmed,
+      pts: num,
+      cat: 'egen',
+      createdBy: ADMIN_PLAYER_ID,
+    });
+    setLabel('');
+    setPts('');
+  }
+
+  return (
+    <>
+      <Eyebrow style={{ marginTop: 22, marginBottom: 8 }}>NY REGEL</Eyebrow>
+      <p
+        style={{
+          fontFamily: 'var(--body)',
+          fontSize: 13.5,
+          color: 'var(--muted)',
+          lineHeight: 1.5,
+          marginBottom: 12,
+        }}
+      >
+        Lag en regel ad hoc — f.eks. "1.-plass minigolf" +15. Den dukker opp
+        nederst i Poeng-lista og i Regelboka.
+      </p>
+
+      <form
+        onSubmit={submit}
+        style={{
+          background: 'var(--card)',
+          padding: 14,
+          borderRadius: 14,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+        }}
+      >
+        <input
+          type="text"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="Tekst (f.eks. Vant minigolf)"
+          maxLength={80}
+          style={{
+            padding: '12px 14px',
+            border: '1.5px solid transparent',
+            borderRadius: 10,
+            background: 'var(--bg)',
+            fontFamily: 'var(--body)',
+            fontSize: 15,
+            color: 'var(--ink)',
+            outline: 'none',
+          }}
+        />
+        <input
+          type="number"
+          inputMode="numeric"
+          value={pts}
+          onChange={(e) => setPts(e.target.value)}
+          placeholder="Poeng (negative tall tillatt, f.eks. -5)"
+          style={{
+            padding: '12px 14px',
+            border: '1.5px solid transparent',
+            borderRadius: 10,
+            background: 'var(--bg)',
+            fontFamily: 'var(--mono)',
+            fontSize: 15,
+            color: 'var(--ink)',
+            outline: 'none',
+          }}
+        />
+        {error && (
+          <div
+            style={{
+              fontFamily: 'var(--body)',
+              fontSize: 13,
+              color: 'var(--err)',
+            }}
+          >
+            {error}
+          </div>
+        )}
+        <button type="submit" className="cta" style={{ borderRadius: 10 }}>
+          Legg til regel
+        </button>
+      </form>
+
+      <Eyebrow style={{ marginTop: 22, marginBottom: 10 }}>
+        EGNE REGLER ({customRules.length})
+      </Eyebrow>
+      {customRules.length === 0 ? (
+        <div
+          style={{
+            fontFamily: 'var(--body)',
+            fontSize: 14,
+            color: 'var(--muted)',
+            textAlign: 'center',
+            padding: 18,
+          }}
+        >
+          Ingen egne regler ennå.
+        </div>
+      ) : (
+        <div className="rules-list">
+          {customRules.map((r) => (
+            <div key={r.id} className="rule-row">
+              <div
+                style={{
+                  flex: 1,
+                  fontFamily: 'var(--display)',
+                  fontWeight: 600,
+                  fontSize: 14.5,
+                }}
+              >
+                {r.label}
+              </div>
+              <span
+                className="num bold"
+                style={{
+                  color: pointsColor(r.pts),
+                  fontSize: 15,
+                  marginRight: 10,
+                }}
+              >
+                {fmtPts(r.pts)}
+              </span>
+              <button
+                onClick={() => removeCustomRule(r.id)}
+                aria-label="Slett regel"
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--muted)',
+                  cursor: 'pointer',
+                  fontSize: 18,
+                  padding: 4,
+                }}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </>
   );
 }
@@ -405,9 +579,7 @@ function EventsTab() {
               }}
             >
               {PEOPLE_BY_ID[e.playerId]?.name ?? e.playerId}
-              {e.groupBatchId && (
-                <span className="badge-mono"> · gruppe</span>
-              )}
+              {e.groupBatchId && <span className="badge-mono"> · gruppe</span>}
             </div>
             <div
               style={{
@@ -448,9 +620,9 @@ function EventsTab() {
   );
 }
 
-function FristerTab() {
+function FristTab() {
   const [, force] = useState(0);
-  const overrides = getLockOverrides();
+  const locked = isDayLocked(SATURDAY_ID);
   return (
     <div style={{ marginTop: 22 }}>
       <p
@@ -462,80 +634,68 @@ function FristerTab() {
           marginBottom: 14,
         }}
       >
-        Frister er hardkodet til reelle datoer i juli 2026. Du kan tvinge en dag
-        låst eller åpen for testing.
+        Lørdag låses kl. {SATURDAY.deadline} på bryllupsdagen ({SATURDAY.date}).
+        Du kan tvinge den åpen eller låst for testing.
       </p>
-      {DAYS.map((d) => {
-        const locked = isDayLocked(d.id);
-        const override = overrides[d.id];
-        return (
-          <div key={d.id} className="card" style={{ padding: 16, marginBottom: 10 }}>
+      <div className="card" style={{ padding: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <div>
+            <Eyebrow>
+              {SATURDAY.long.toUpperCase()} · {SATURDAY.date.toUpperCase()}
+            </Eyebrow>
             <div
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                fontFamily: 'var(--display)',
+                fontWeight: 700,
+                fontSize: 18,
+                marginTop: 4,
               }}
             >
-              <div>
-                <Eyebrow>
-                  {d.long.toUpperCase()} · {d.date.toUpperCase()}
-                </Eyebrow>
-                <div
-                  style={{
-                    fontFamily: 'var(--display)',
-                    fontWeight: 700,
-                    fontSize: 18,
-                    marginTop: 4,
-                  }}
-                >
-                  {d.deadline}
-                </div>
-              </div>
-              <div
-                style={{
-                  fontFamily: 'var(--mono)',
-                  fontSize: 11,
-                  padding: '4px 10px',
-                  borderRadius: 999,
-                  background: locked ? 'var(--accent-soft)' : 'var(--card-soft)',
-                  color: locked ? 'var(--err)' : 'var(--ok)',
-                }}
-              >
-                {locked ? 'LÅST' : 'ÅPEN'}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-              <button
-                className="ghost-btn"
-                style={{ flex: 1, fontSize: 12, padding: '8px 10px' }}
-                onClick={() => {
-                  setLockOverride(
-                    d.id,
-                    override === false ? undefined : false,
-                  );
-                  force((x) => x + 1);
-                }}
-              >
-                {override === false ? '✓ Tvunget åpen' : 'Tving åpen'}
-              </button>
-              <button
-                className="ghost-btn"
-                style={{ flex: 1, fontSize: 12, padding: '8px 10px' }}
-                onClick={() => {
-                  setLockOverride(
-                    d.id,
-                    override === true ? undefined : true,
-                  );
-                  force((x) => x + 1);
-                }}
-              >
-                {override === true ? '✓ Tvunget låst' : 'Tving låst'}
-              </button>
+              {SATURDAY.deadline}
             </div>
           </div>
-        );
-      })}
+          <div
+            style={{
+              fontFamily: 'var(--mono)',
+              fontSize: 11,
+              padding: '4px 10px',
+              borderRadius: 999,
+              background: locked ? 'var(--accent-soft)' : 'var(--card-soft)',
+              color: locked ? 'var(--err)' : 'var(--ok)',
+            }}
+          >
+            {locked ? 'LÅST' : 'ÅPEN'}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+          <button
+            className="ghost-btn"
+            style={{ flex: 1, fontSize: 12, padding: '8px 10px' }}
+            onClick={() => {
+              setLockOverride(SATURDAY_ID, locked ? false : undefined);
+              force((x) => x + 1);
+            }}
+          >
+            {locked ? 'Tving åpen' : '✓ Åpen'}
+          </button>
+          <button
+            className="ghost-btn"
+            style={{ flex: 1, fontSize: 12, padding: '8px 10px' }}
+            onClick={() => {
+              setLockOverride(SATURDAY_ID, locked ? undefined : true);
+              force((x) => x + 1);
+            }}
+          >
+            {locked ? '✓ Låst' : 'Tving låst'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
