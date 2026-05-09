@@ -106,7 +106,7 @@ export function SplashScreen() {
       }}
     >
       <div style={{ textAlign: 'center', marginTop: 40 }}>
-        <Eyebrow>OSLO LØRDAG 30. JULI 2026</Eyebrow>
+        <Eyebrow>OSLO LØRDAG 30. MAI 2026</Eyebrow>
         <h1
           className="h1"
           style={{ fontSize: 66, lineHeight: 0.9, marginTop: 18, marginBottom: 4 }}

@@ -7,7 +7,7 @@ export const SATURDAY: Day = {
   id: 'lor',
   label: 'Lør',
   long: 'Lørdag',
-  date: '18. juli',
+  date: '30. mai',
   deadline: '09:00',
   theme: 'Hoveddagen',
 };

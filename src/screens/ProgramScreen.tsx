@@ -6,7 +6,7 @@ export function ProgramScreen() {
   return (
     <div className="screen scroll">
       <div className="screen-pad">
-        <Eyebrow>OSLO, FRE TIL SØN</Eyebrow>
+        <Eyebrow>OSLO · LØRDAG 30. MAI</Eyebrow>
         <H1>Programmet</H1>
         <p
           style={{
