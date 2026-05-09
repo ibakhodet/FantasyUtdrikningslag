@@ -72,6 +72,7 @@ class LocalStore {
 
   getEvents = () => this.events;
   getTeams = (userId: string): Teams => this.teams[userId] ?? EMPTY_TEAMS;
+  getAllTeams = () => this.teams;
   getCustomRules = () => this.customRules;
 
   addEvent(ev: Omit<ScoreEvent, 'id' | 'ts'>) {
@@ -179,6 +180,7 @@ class FirestoreStore {
 
   getEvents = () => this.events;
   getTeams = (userId: string): Teams => this.teams[userId] ?? EMPTY_TEAMS;
+  getAllTeams = () => this.teams;
   getCustomRules = () => this.customRules;
 
   async addEvent(ev: Omit<ScoreEvent, 'id' | 'ts'>) {
@@ -236,6 +238,16 @@ const store = FIREBASE_ENABLED ? firestoreStore : localStore;
 
 export function useEvents(): ScoreEvent[] {
   return useSyncExternalStore(store.subscribe, store.getEvents, store.getEvents);
+}
+
+const EMPTY_ALL_TEAMS: Record<string, Teams> = {};
+
+export function useAllTeams(): Record<string, Teams> {
+  return useSyncExternalStore(
+    store.subscribe,
+    store.getAllTeams,
+    () => EMPTY_ALL_TEAMS,
+  );
 }
 
 export function useTeams(userId: string | null): Teams {
@@ -344,6 +356,19 @@ export function seedDemoIfEmpty() {
 
 export function eventsForPlayerDay(events: ScoreEvent[], playerId: string, dayId: DayId) {
   return events.filter((e) => e.playerId === playerId && e.dayId === dayId);
+}
+
+export function fantasyTotalByUser(
+  userId: string,
+  allTeams: Record<string, Teams>,
+  rawTotals: Record<string, { total: number; perDay: Record<DayId, number> }>,
+): number {
+  const team = allTeams[userId]?.['lor'];
+  if (!team || team.players.length === 0) return 0;
+  return team.players.reduce((sum, pid) => {
+    const pts = rawTotals[pid]?.perDay['lor'] ?? 0;
+    return sum + (team.captain === pid ? pts * 2 : pts);
+  }, 0);
 }
 
 export function totalsByPlayer(events: ScoreEvent[]) {

@@ -2,18 +2,19 @@ import { useMemo } from 'react';
 import { Avatar } from '../components/Avatar';
 import { Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
 import { PEOPLE_BY_ID, PLAYERS } from '../data/players';
-import { totalsByPlayer, useEvents } from '../lib/store';
+import { fantasyTotalByUser, totalsByPlayer, useAllTeams, useEvents } from '../lib/store';
 
 export function TabellScreen() {
   const events = useEvents();
+  const allTeams = useAllTeams();
 
   const totals = useMemo(() => {
-    const tot = totalsByPlayer(events);
+    const raw = totalsByPlayer(events);
     return PLAYERS.map((p) => ({
       p,
-      total: tot[p.id].total,
+      total: fantasyTotalByUser(p.id, allTeams, raw),
     })).sort((a, b) => b.total - a.total);
-  }, [events]);
+  }, [events, allTeams]);
 
   const podium = useMemo(() => totals.slice(0, 3), [totals]);
 
