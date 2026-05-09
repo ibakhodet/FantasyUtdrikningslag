@@ -8,8 +8,11 @@ import {
   addCustomRule,
   addEvent,
   addGroupEvents,
+  fantasyTotalByUser,
   removeCustomRule,
   removeEvent,
+  totalsByPlayer,
+  useAllTeams,
   useCustomRules,
   useEvents,
 } from '../lib/store';
@@ -130,7 +133,7 @@ function PinGate({ onPass }: { onPass: () => void }) {
   );
 }
 
-type Tab = 'poeng' | 'gruppe' | 'regler' | 'events' | 'frist';
+type Tab = 'poeng' | 'gruppe' | 'regler' | 'events' | 'frist' | 'fasit';
 
 function AdminPanel() {
   const [tab, setTab] = useState<Tab>('poeng');
@@ -149,12 +152,14 @@ function AdminPanel() {
               ['regler', 'Regler'],
               ['events', 'Logg'],
               ['frist', 'Frist'],
+              ['fasit', '🏆'],
             ] as const
           ).map(([k, lbl]) => (
             <button
               key={k}
               className={'seg-btn' + (tab === k ? ' active' : '')}
               onClick={() => setTab(k)}
+              style={k === 'fasit' ? { color: tab === k ? 'var(--accent-gold)' : 'var(--muted)' } : {}}
             >
               {lbl}
             </button>
@@ -166,6 +171,25 @@ function AdminPanel() {
         {tab === 'regler' && <ReglerTab />}
         {tab === 'events' && <EventsTab />}
         {tab === 'frist' && <FristTab />}
+        {tab === 'fasit' && <FasitTab />}
+
+        {tab !== 'fasit' && (
+          <div
+            style={{
+              marginTop: 48,
+              paddingTop: 24,
+              borderTop: '1px solid rgba(0,0,0,0.07)',
+            }}
+          >
+            <button
+              className="cta"
+              style={{ background: 'var(--accent-gold)', gap: 8 }}
+              onClick={() => setTab('fasit')}
+            >
+              🏆 Se hvem som vinner
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -617,6 +641,227 @@ function EventsTab() {
         </div>
       ))}
     </div>
+  );
+}
+
+function FasitTab() {
+  const events = useEvents();
+  const allTeams = useAllTeams();
+
+  const rawTotals = useMemo(() => totalsByPlayer(events), [events]);
+
+  const standings = useMemo(
+    () =>
+      PLAYERS.map((p) => ({
+        p,
+        fantasyTotal: fantasyTotalByUser(p.id, allTeams, rawTotals),
+        team: allTeams[p.id]?.['lor'] ?? null,
+      })).sort((a, b) => b.fantasyTotal - a.fantasyTotal),
+    [allTeams, rawTotals],
+  );
+
+  const sortedByReal = useMemo(
+    () =>
+      [...PLAYERS].sort(
+        (a, b) => (rawTotals[b.id]?.perDay['lor'] ?? 0) - (rawTotals[a.id]?.perDay['lor'] ?? 0),
+      ),
+    [rawTotals],
+  );
+
+  const hasScores = standings.some((r) => r.fantasyTotal !== 0);
+  const winner = standings[0];
+
+  return (
+    <>
+      <div style={{ marginTop: 28, textAlign: 'center', padding: '0 8px' }}>
+        <div style={{ fontSize: 56, lineHeight: 1 }}>🏆</div>
+        <div
+          style={{
+            fontFamily: 'var(--display)',
+            fontWeight: 400,
+            fontSize: 38,
+            lineHeight: 1.1,
+            marginTop: 10,
+          }}
+        >
+          {hasScores ? winner.p.name : '—'}
+        </div>
+        <div
+          style={{
+            fontFamily: 'var(--mono)',
+            fontSize: 22,
+            color: 'var(--accent-gold)',
+            fontWeight: 600,
+            marginTop: 6,
+          }}
+        >
+          {fmtPts(hasScores ? winner.fantasyTotal : 0)}
+        </div>
+        <div
+          style={{
+            fontFamily: 'var(--body)',
+            fontSize: 13,
+            color: 'var(--muted)',
+            marginTop: 4,
+          }}
+        >
+          {hasScores ? 'Fantasy-vinner 🎉' : 'Ingen poeng registrert ennå.'}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 28 }}>
+        <Eyebrow style={{ marginBottom: 12 }}>SLUTTRESULTAT · FANTASY</Eyebrow>
+        {standings.map((row, i) => {
+          const team = row.team;
+          const isWinner = i === 0 && hasScores;
+          return (
+            <div
+              key={row.p.id}
+              className="card"
+              style={{
+                marginBottom: 10,
+                padding: '14px 16px',
+                ...(isWinner
+                  ? { background: 'linear-gradient(120deg, var(--accent-soft) 0%, var(--card) 70%)' }
+                  : {}),
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--display)',
+                    fontStyle: 'italic',
+                    fontSize: 20,
+                    color: isWinner ? 'var(--accent-gold)' : 'var(--muted)',
+                    width: 22,
+                    textAlign: 'right',
+                    flexShrink: 0,
+                  }}
+                >
+                  {i + 1}
+                </span>
+                <Avatar id={row.p.id} size={40} ring={isWinner} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontFamily: 'var(--display)',
+                      fontWeight: 600,
+                      fontSize: 15,
+                      marginBottom: 6,
+                    }}
+                  >
+                    {row.p.name}
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {team && team.players.length > 0 ? (
+                      team.players.map((pid) => {
+                        const isCapt = team.captain === pid;
+                        const pPts = rawTotals[pid]?.perDay['lor'] ?? 0;
+                        const person = PEOPLE_BY_ID[pid];
+                        return (
+                          <div
+                            key={pid}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 3,
+                              background: 'var(--bg)',
+                              borderRadius: 7,
+                              padding: '3px 7px',
+                              border: isCapt
+                                ? '1.5px solid var(--accent-gold)'
+                                : '1.5px solid transparent',
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontFamily: 'var(--display)',
+                                fontSize: 12,
+                                fontWeight: 600,
+                              }}
+                            >
+                              {person?.name ?? pid}
+                            </span>
+                            {isCapt && (
+                              <span
+                                className="badge-mono"
+                                style={{ color: 'var(--accent-gold)', marginLeft: 1 }}
+                              >
+                                K
+                              </span>
+                            )}
+                            <span
+                              style={{
+                                fontFamily: 'var(--mono)',
+                                fontSize: 11,
+                                color: pointsColor(pPts),
+                              }}
+                            >
+                              {isCapt ? `${fmtPts(pPts)}×2` : fmtPts(pPts)}
+                            </span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <span
+                        style={{
+                          fontFamily: 'var(--body)',
+                          fontSize: 12,
+                          color: 'var(--muted)',
+                        }}
+                      >
+                        Ingen lag satt
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span
+                  className="num bold"
+                  style={{
+                    color: isWinner ? 'var(--accent-gold)' : pointsColor(row.fantasyTotal),
+                    fontSize: 18,
+                    flexShrink: 0,
+                  }}
+                >
+                  {fmtPts(row.fantasyTotal)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop: 28 }}>
+        <Eyebrow style={{ marginBottom: 10 }}>FAKTISKE POENG · SPILLERNE</Eyebrow>
+        <div className="rules-list">
+          {sortedByReal.map((p) => {
+            const pts = rawTotals[p.id]?.perDay['lor'] ?? 0;
+            return (
+              <div key={p.id} className="rule-row">
+                <Avatar id={p.id} size={30} />
+                <span
+                  style={{
+                    flex: 1,
+                    marginLeft: 6,
+                    fontFamily: 'var(--display)',
+                    fontWeight: 600,
+                    fontSize: 14,
+                  }}
+                >
+                  {p.name}
+                </span>
+                <span
+                  className="num bold"
+                  style={{ color: pointsColor(pts), fontSize: 15 }}
+                >
+                  {pts === 0 ? '·' : fmtPts(pts)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
   );
 }
 
