@@ -69,7 +69,7 @@ export function Avatar({ id, size = 56, ring = false, captain = false, dim = fal
             width: size * 0.36,
             height: size * 0.36,
             borderRadius: '50%',
-            background: 'var(--accent)',
+            background: 'var(--accent-gold)',
             color: '#fff',
             display: 'flex',
             alignItems: 'center',
