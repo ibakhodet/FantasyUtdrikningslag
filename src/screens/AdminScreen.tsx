@@ -328,10 +328,15 @@ function PoengTab() {
             {grouped.map((g) => (
               <Fragment key={g.cat.id}>
                 <div
-                  className="eyebrow"
                   style={{
-                    padding: '12px 14px 4px',
-                    opacity: 0.65,
+                    background: '#dcdbd5',
+                    color: 'var(--ink)',
+                    fontFamily: 'var(--mono)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    padding: '7px 16px',
                   }}
                 >
                   {g.cat.label}
