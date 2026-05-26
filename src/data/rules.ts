@@ -37,6 +37,7 @@ export const RULES: Rule[] = [
   { id: 'minus-nei-shots', label: 'Sier nei til en runde shots',                            pts: -5,  cat: 'minus', repeat: true },
   { id: 'minus-osloneg',   label: 'Snakker stygt om Oslo',                                  pts: -10, cat: 'minus', repeat: true },
   { id: 'minus-dama',      label: 'Tok en lang samtale med dama si',                        pts: -10, cat: 'minus', repeat: true },
+  { id: 'minus-packraft',  label: 'Falt utti under packrafting',                            pts: -10, cat: 'minus', repeat: true },
   { id: 'natt-sist',       label: 'Sist i seng',                                            pts: 10,  cat: 'minus' },
   { id: 'natt-forst',      label: 'Først i seng',                                           pts: -5,  cat: 'minus' },
 ];
