@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Avatar } from '../components/Avatar';
 import { Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
 import { ALL_PEOPLE, PEOPLE_BY_ID, PLAYERS, ADMIN_PLAYER_ID } from '../data/players';
 import { SATURDAY, SATURDAY_ID } from '../data/days';
-import { RULES } from '../data/rules';
+import { RULES, CATEGORIES } from '../data/rules';
 import {
   addCustomRule,
   addEvent,
@@ -228,6 +228,15 @@ function PoengTab() {
     [customRules],
   );
 
+  const grouped = useMemo(
+    () =>
+      CATEGORIES.map((c) => ({
+        cat: c,
+        rules: allRules.filter((r) => r.cat === c.id),
+      })).filter((g) => g.rules.length > 0),
+    [allRules],
+  );
+
   function register(rule: Rule) {
     if (!selected) return;
     addEvent({
@@ -316,38 +325,51 @@ function PoengTab() {
             )}
           </div>
           <div className="rules-list">
-            {allRules.map((r) => (
-              <div
-                key={r.id}
-                className={'rule-row tap' + (r.highlight ? ' hi' : '')}
-                onClick={() => register(r)}
-              >
+            {grouped.map((g) => (
+              <Fragment key={g.cat.id}>
                 <div
+                  className="eyebrow"
                   style={{
-                    flex: 1,
-                    fontFamily: 'var(--display)',
-                    fontWeight: 600,
-                    fontSize: 14.5,
+                    padding: '12px 14px 4px',
+                    opacity: 0.65,
                   }}
                 >
-                  {r.label}
-                  {r.custom && (
-                    <span
-                      className="badge-mono"
-                      style={{ color: 'var(--accent)' }}
-                    >
-                      {' '}
-                      · egen
-                    </span>
-                  )}
+                  {g.cat.label}
                 </div>
-                <span
-                  className="num bold"
-                  style={{ color: pointsColor(r.pts), fontSize: 15 }}
-                >
-                  {fmtPts(r.pts)}
-                </span>
-              </div>
+                {g.rules.map((r) => (
+                  <div
+                    key={r.id}
+                    className={'rule-row tap' + (r.highlight ? ' hi' : '')}
+                    onClick={() => register(r)}
+                  >
+                    <div
+                      style={{
+                        flex: 1,
+                        fontFamily: 'var(--display)',
+                        fontWeight: 600,
+                        fontSize: 14.5,
+                      }}
+                    >
+                      {r.label}
+                      {r.custom && (
+                        <span
+                          className="badge-mono"
+                          style={{ color: 'var(--accent)' }}
+                        >
+                          {' '}
+                          · egen
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className="num bold"
+                      style={{ color: pointsColor(r.pts), fontSize: 15 }}
+                    >
+                      {fmtPts(r.pts)}
+                    </span>
+                  </div>
+                ))}
+              </Fragment>
             ))}
           </div>
           <p

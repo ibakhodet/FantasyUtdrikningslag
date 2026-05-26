@@ -10,10 +10,17 @@ export const PLAYERS: Person[] = [
   { id: 'thom',   name: 'Thom',   nick: 'Sjarmøren',   color: '#9b4a55', photo: 'avatars/thom.png',   bio: '' },
 ];
 
+// Midlertidige testbrukere — ikke spillere. De er ikke med i PLAYERS, så de
+// kan ikke velges av andre og dukker ikke opp i tabellen. De kan logge inn og
+// sette opp eget lag fritt. FJERN ASTRID etter turen.
+export const GUESTS: Person[] = [
+  { id: 'astrid', name: 'Astrid', nick: 'Testpilot', color: '#7a4a6e', photo: '', bio: '' },
+];
+
 export const STIAN = PLAYERS[0];
 export const ALL_PEOPLE = PLAYERS;
 export const PEOPLE_BY_ID: Record<string, Person> = Object.fromEntries(
-  PLAYERS.map((p) => [p.id, p]),
+  [...PLAYERS, ...GUESTS].map((p) => [p.id, p]),
 );
 
 export const ADMIN_PLAYER_ID = 'martin';
@@ -28,6 +35,8 @@ export const EMAIL_TO_PLAYER: Record<string, string> = {
   'erlendrobertsen@icloud.com':  'erlend',
   'tunlisondre@gmail.com':       'sondre',
   'thom.r.pedersen@gmail.com':   'thom',
+  // Midlertidig testbruker — fjern Astrid etter turen.
+  'astridkm@gmail.com':          'astrid',
 };
 
 export function lookupPlayerByEmail(email: string | null | undefined): string | null {
