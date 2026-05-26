@@ -1,6 +1,6 @@
 import { Avatar } from '../components/Avatar';
 import { Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
-import { ALL_PEOPLE, PEOPLE_BY_ID, STIAN } from '../data/players';
+import { ALL_PEOPLE, PEOPLE_BY_ID } from '../data/players';
 import { SATURDAY, SATURDAY_ID } from '../data/days';
 import { isDayLocked } from '../lib/locking';
 import { fillTeamSeats, setTeam, useEvents, useTeams } from '../lib/store';
@@ -236,59 +236,6 @@ export function TeamScreen({ userId }: Props) {
               </div>
             );
           })}
-        </div>
-
-        <div
-          style={{
-            marginTop: 20,
-            padding: 14,
-            background: 'var(--card-soft)',
-            borderRadius: 14,
-          }}
-        >
-          <Eyebrow>HOVEDPERSON</Eyebrow>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              marginTop: 8,
-            }}
-          >
-            <Avatar id="stian" size={52} />
-            <div>
-              <div
-                style={{
-                  fontFamily: 'var(--display)',
-                  fontWeight: 600,
-                  fontSize: 16,
-                }}
-              >
-                Stian
-              </div>
-              <div
-                style={{
-                  fontFamily: 'var(--body)',
-                  fontSize: 13,
-                  color: 'var(--muted)',
-                }}
-              >
-                {STIAN.bio}
-              </div>
-            </div>
-          </div>
-          <div
-            style={{
-              fontSize: 12,
-              fontFamily: 'var(--body)',
-              color: 'var(--muted)',
-              marginTop: 10,
-              lineHeight: 1.45,
-            }}
-          >
-            Stian er hovedpersonen, men han kan velges som spiller. Egne{' '}
-            <b>Stian-events</b> gir bonuspoeng (se Regler).
-          </div>
         </div>
       </div>
     </div>
