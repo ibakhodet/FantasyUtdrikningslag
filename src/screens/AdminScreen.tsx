@@ -21,7 +21,7 @@ import {
 import { isDayLocked, setLockOverride } from '../lib/locking';
 import type { Rule } from '../types';
 
-const ADMIN_PIN = (import.meta.env.VITE_ADMIN_PIN as string | undefined) || '9005';
+const ADMIN_PIN = (import.meta.env.VITE_ADMIN_PIN as string | undefined) || '6969';
 const SESSION_KEY = 'fsu:adminUnlocked';
 
 interface Props {
