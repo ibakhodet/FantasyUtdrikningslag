@@ -105,6 +105,16 @@ class LocalStore {
     this.emit();
   }
 
+  resetPlayerEvents(playerId: string) {
+    this.events = this.events.filter((e) => e.playerId !== playerId);
+    this.emit();
+  }
+
+  resetAllEvents() {
+    this.events = [];
+    this.emit();
+  }
+
   setTeam(userId: string, dayId: DayId, team: Team) {
     const cur = this.teams[userId] ?? emptyTeams();
     this.teams[userId] = { ...cur, [dayId]: team };
@@ -244,6 +254,36 @@ class FirestoreStore {
     }
   }
 
+  async resetPlayerEvents(playerId: string) {
+    if (!db) return;
+    const toDelete = this.events.filter((e) => e.playerId === playerId);
+    const prev = this.events;
+    this.events = this.events.filter((e) => e.playerId !== playerId);
+    this.emit();
+    try {
+      await Promise.all(toDelete.map((e) => deleteDoc(doc(db!, 'events', e.id))));
+    } catch (err) {
+      this.events = prev;
+      this.emit();
+      window.alert('Feil: kunne ikke nullstille spiller.\n' + (err as Error).message);
+    }
+  }
+
+  async resetAllEvents() {
+    if (!db) return;
+    const toDelete = [...this.events];
+    const prev = this.events;
+    this.events = [];
+    this.emit();
+    try {
+      await Promise.all(toDelete.map((e) => deleteDoc(doc(db!, 'events', e.id))));
+    } catch (err) {
+      this.events = prev;
+      this.emit();
+      window.alert('Feil: kunne ikke nullstille alle poeng.\n' + (err as Error).message);
+    }
+  }
+
   async setTeam(userId: string, dayId: DayId, team: Team) {
     if (!db) return;
     if (!this.teams[userId]) this.teams[userId] = emptyTeams();
@@ -305,6 +345,14 @@ export function addGroupEvents(
 
 export function removeEvent(id: string) {
   return store.removeEvent(id);
+}
+
+export function resetPlayerEvents(playerId: string) {
+  return store.resetPlayerEvents(playerId);
+}
+
+export function resetAllEvents() {
+  return store.resetAllEvents();
 }
 
 export function setTeam(userId: string, dayId: DayId, team: Team) {
