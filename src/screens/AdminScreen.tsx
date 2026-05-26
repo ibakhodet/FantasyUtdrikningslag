@@ -287,9 +287,37 @@ function PoengTab() {
 
       {selected ? (
         <div style={{ marginTop: 22 }}>
-          <Eyebrow style={{ marginBottom: 10 }}>
-            REGISTRER POENG · {PEOPLE_BY_ID[selected].name.toUpperCase()}
-          </Eyebrow>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <Eyebrow>
+              REGISTRER POENG · {PEOPLE_BY_ID[selected].name.toUpperCase()}
+            </Eyebrow>
+            {confirmReset === 'player' ? (
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  className="ghost-btn"
+                  style={{ padding: '4px 12px', fontSize: 12, color: 'var(--err)', borderColor: 'var(--err)' }}
+                  onClick={handleResetPlayer}
+                >
+                  Ja, slett
+                </button>
+                <button
+                  className="ghost-btn"
+                  style={{ padding: '4px 12px', fontSize: 12 }}
+                  onClick={() => setConfirmReset(null)}
+                >
+                  Nei
+                </button>
+              </div>
+            ) : (
+              <button
+                className="ghost-btn"
+                style={{ padding: '4px 12px', fontSize: 12, color: 'var(--err)', borderColor: 'rgba(255,59,48,0.3)' }}
+                onClick={() => setConfirmReset('player')}
+              >
+                Nullstill
+              </button>
+            )}
+          </div>
           <div className="rules-list">
             {allRules.map((r) => (
               <div
@@ -339,40 +367,6 @@ function PoengTab() {
           >
             Trenger du en ny regel? Gå til <b>Regler</b>-fanen.
           </p>
-
-          {/* Reset spiller */}
-          <div style={{ marginTop: 20, borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: 16 }}>
-            {confirmReset === 'player' ? (
-              <div style={{ background: 'var(--card)', borderRadius: 12, padding: 14 }}>
-                <div style={{ fontFamily: 'var(--display)', fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
-                  Er du sikker?
-                </div>
-                <div style={{ fontFamily: 'var(--body)', fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
-                  Alle poeng for {PEOPLE_BY_ID[selected!].name} blir slettet.
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    className="ghost-btn"
-                    style={{ flex: 1, color: 'var(--err)', borderColor: 'var(--err)' }}
-                    onClick={handleResetPlayer}
-                  >
-                    Ja, slett
-                  </button>
-                  <button className="ghost-btn" style={{ flex: 1 }} onClick={() => setConfirmReset(null)}>
-                    Nei
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                className="ghost-btn"
-                style={{ width: '100%', color: 'var(--err)', borderColor: 'rgba(255,59,48,0.3)' }}
-                onClick={() => setConfirmReset('player')}
-              >
-                Nullstill {PEOPLE_BY_ID[selected!].name}
-              </button>
-            )}
-          </div>
         </div>
       ) : (
         <div
