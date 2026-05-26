@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TabBar } from './components/TabBar';
 import { SplashScreen } from './screens/SplashScreen';
 import { TeamScreen } from './screens/TeamScreen';
@@ -7,7 +7,10 @@ import { ProgramScreen } from './screens/ProgramScreen';
 import { ReglerScreen } from './screens/ReglerScreen';
 import { AdminScreen } from './screens/AdminScreen';
 import { ProfilScreen } from './screens/ProfilScreen';
+import { WinnerScreen } from './screens/WinnerScreen';
 import { ADMIN_PLAYER_ID } from './data/players';
+import { SUNDAY_RESULTS_TS } from './data/days';
+import { isResultsRevealed, RESULTS_CHANGE_EVENT } from './lib/locking';
 import { useCurrentUserId } from './lib/store';
 import { useFirebaseAuth } from './lib/auth';
 
@@ -18,11 +21,33 @@ export function App() {
   useFirebaseAuth();
   const userId = useCurrentUserId();
   const [tab, setTab] = useState<TabId>('lag');
+  const [, forceTick] = useState(0);
+
+  // Re-render when the results phase is toggled by admin, and schedule an
+  // automatic re-render at the Sunday-noon reveal so open tabs flip over.
+  useEffect(() => {
+    const bump = () => forceTick((x) => x + 1);
+    window.addEventListener(RESULTS_CHANGE_EVENT, bump);
+    const ms = SUNDAY_RESULTS_TS - Date.now();
+    const timer = ms > 0 && ms < 2 ** 31 ? window.setTimeout(bump, ms) : undefined;
+    return () => {
+      window.removeEventListener(RESULTS_CHANGE_EVENT, bump);
+      if (timer) window.clearTimeout(timer);
+    };
+  }, []);
 
   if (!userId) {
     return (
       <div className="app-shell">
         <SplashScreen />
+      </div>
+    );
+  }
+
+  if (isResultsRevealed()) {
+    return (
+      <div className="app-shell">
+        <WinnerScreen userId={userId} />
       </div>
     );
   }

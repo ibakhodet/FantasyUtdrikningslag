@@ -17,7 +17,13 @@ import {
   useCustomRules,
   useEvents,
 } from '../lib/store';
-import { isDayLocked, setLockOverride } from '../lib/locking';
+import {
+  isDayLocked,
+  setLockOverride,
+  isResultsRevealed,
+  setResultsOverride,
+  getResultsOverride,
+} from '../lib/locking';
 import type { Rule } from '../types';
 
 const ADMIN_PIN = (import.meta.env.VITE_ADMIN_PIN as string | undefined) || '6969';
@@ -914,6 +920,8 @@ function FasitTab() {
 function FristTab() {
   const [, force] = useState(0);
   const locked = isDayLocked(SATURDAY_ID);
+  const revealed = isResultsRevealed();
+  const resultsOverride = getResultsOverride();
   return (
     <div style={{ marginTop: 22 }}>
       <p
@@ -986,6 +994,89 @@ function FristTab() {
             {locked ? '✓ Låst' : 'Tving låst'}
           </button>
         </div>
+      </div>
+
+      <p
+        style={{
+          fontFamily: 'var(--body)',
+          fontSize: 13.5,
+          color: 'var(--muted)',
+          lineHeight: 1.5,
+          margin: '22px 0 14px',
+        }}
+      >
+        Søndag kl 12:00 tar vinner-skjermen over hele appen for alle. Trenger du å
+        rette poeng etterpå, trykk «Endre poeng» på vinner-skjermen og tving den
+        skjult her.
+      </p>
+      <div className="card" style={{ padding: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <div>
+            <Eyebrow>FINALEFASE · SØNDAG 31. MAI</Eyebrow>
+            <div
+              style={{
+                fontFamily: 'var(--display)',
+                fontWeight: 700,
+                fontSize: 18,
+                marginTop: 4,
+              }}
+            >
+              12:00
+            </div>
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--mono)',
+              fontSize: 11,
+              padding: '4px 10px',
+              borderRadius: 999,
+              background: revealed ? 'var(--accent-soft)' : 'var(--card-soft)',
+              color: revealed ? 'var(--accent-gold)' : 'var(--muted)',
+            }}
+          >
+            {revealed ? 'AKTIV' : 'INAKTIV'}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+          <button
+            className="ghost-btn"
+            style={{ flex: 1, fontSize: 12, padding: '8px 10px' }}
+            onClick={() => {
+              setResultsOverride(revealed ? undefined : true);
+              force((x) => x + 1);
+            }}
+          >
+            {revealed ? '✓ Vist' : 'Tving vis'}
+          </button>
+          <button
+            className="ghost-btn"
+            style={{ flex: 1, fontSize: 12, padding: '8px 10px' }}
+            onClick={() => {
+              setResultsOverride(revealed ? false : undefined);
+              force((x) => x + 1);
+            }}
+          >
+            {revealed ? 'Tving skjul' : '✓ Skjult'}
+          </button>
+        </div>
+        {resultsOverride !== undefined && (
+          <button
+            className="ghost-btn"
+            style={{ width: '100%', fontSize: 11, padding: '6px 10px', marginTop: 6 }}
+            onClick={() => {
+              setResultsOverride(undefined);
+              force((x) => x + 1);
+            }}
+          >
+            Nullstill til automatisk (søndag 12:00)
+          </button>
+        )}
       </div>
     </div>
   );

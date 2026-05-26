@@ -11,9 +11,8 @@ export const CATEGORIES = [
 
 export const RULES: Rule[] = [
   // Ting med Stian
-  { id: 'stian-angre',     label: 'Få Stian til å gjøre noe han angrer på',  pts: 30, cat: 'stian', highlight: true },
+  { id: 'stian-angre',     label: 'Få Stian til å gjøre noe han angrer på',  pts: 15, cat: 'stian', highlight: true },
   { id: 'stian-baere',     label: 'Bære Stian fra pub til pub',              pts: 25, cat: 'stian', highlight: true },
-  { id: 'stian-bord',      label: 'Stian danser på bordet',                  pts: 25, cat: 'stian' },
 
   // Drikking
   { id: 'sosial-runde',    label: 'Spander en runde til alle',               pts: 30, cat: 'drikking', highlight: true },
