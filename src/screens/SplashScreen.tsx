@@ -255,7 +255,7 @@ export function SplashScreen({ auth }: { auth: AuthState }) {
                 style={{ width: '100%', marginTop: 10 }}
                 onClick={() => setMagicMode(true)}
               >
-                Bruk email-lenke i stedet
+                Har du ikke Gmail? Logg inn med e-post
               </button>
             </>
           )
