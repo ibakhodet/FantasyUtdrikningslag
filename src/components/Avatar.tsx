@@ -78,7 +78,7 @@ export function Avatar({ id, size = 56, ring = false, captain = false, dim = fal
             border: '2px solid var(--bg)',
           }}
         >
-          ♥
+          ♛
         </div>
       )}
     </div>
