@@ -3,7 +3,7 @@ import { Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
 import { ALL_PEOPLE, PEOPLE_BY_ID, STIAN } from '../data/players';
 import { SATURDAY, SATURDAY_ID } from '../data/days';
 import { isDayLocked } from '../lib/locking';
-import { setTeam, useEvents, useTeams } from '../lib/store';
+import { fillTeamSeats, setTeam, useEvents, useTeams } from '../lib/store';
 
 interface Props {
   userId: string;
@@ -17,6 +17,8 @@ export function TeamScreen({ userId }: Props) {
   const inTeam = teams[SATURDAY_ID];
   const candidates = ALL_PEOPLE.filter((p) => p.id !== userId); // can pick Stian, not self
   const isLocked = isDayLocked(SATURDAY_ID);
+  // Når låst fylles tomme seter med tilfeldige uvalgte spillere.
+  const seats = isLocked ? fillTeamSeats(userId, inTeam.players) : inTeam.players;
 
   function togglePlayer(pid: string) {
     if (isLocked) return;
@@ -96,7 +98,7 @@ export function TeamScreen({ userId }: Props) {
             }}
           >
             {[0, 1, 2, 3].map((i) => {
-              const pid = inTeam.players[i];
+              const pid = seats[i];
               if (!pid)
                 return (
                   <div key={i} className="slot-empty">
@@ -104,12 +106,14 @@ export function TeamScreen({ userId }: Props) {
                   </div>
                 );
               const isCap = inTeam.captain === pid;
+              const isAuto = isLocked && !inTeam.players.includes(pid);
               return (
                 <div
                   key={pid}
                   className="slot"
                   style={{
                     borderColor: isCap ? 'var(--accent-gold)' : 'transparent',
+                    opacity: isAuto ? 0.7 : 1,
                   }}
                   onClick={() => (isLocked ? null : setCap(pid))}
                 >
@@ -136,6 +140,14 @@ export function TeamScreen({ userId }: Props) {
                   >
                     {PEOPLE_BY_ID[pid].name}
                   </div>
+                  {isAuto && (
+                    <div
+                      className="badge-mono"
+                      style={{ fontSize: 9, color: 'var(--muted)', marginTop: 1 }}
+                    >
+                      auto
+                    </div>
+                  )}
                 </div>
               );
             })}

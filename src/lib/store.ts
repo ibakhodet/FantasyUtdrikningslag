@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { FIREBASE_ENABLED, db } from './firebase';
 import { PLAYERS } from '../data/players';
+import { isDayLocked } from './locking';
 import type { CustomRule, DayId, ScoreEvent, Team, Teams } from '../types';
 
 const EVENTS_KEY = 'fsu:events';
@@ -82,21 +83,6 @@ class LocalStore {
       ts: Date.now(),
     };
     this.events = [full, ...this.events];
-    this.emit();
-  }
-
-  addGroupEvents(common: Omit<ScoreEvent, 'id' | 'ts' | 'playerId' | 'groupBatchId'>) {
-    const batchId = crypto.randomUUID();
-    const ts = Date.now();
-    const newEvents: ScoreEvent[] = PLAYERS.map((p) => ({
-      ...common,
-      playerId: p.id,
-      id: crypto.randomUUID(),
-      ts,
-      groupBatchId: batchId,
-    }));
-    // Stian (hovedperson) får også gruppe-poeng — han er en av spillerne nå.
-    this.events = [...newEvents, ...this.events];
     this.emit();
   }
 
@@ -207,39 +193,6 @@ class FirestoreStore {
     }
   }
 
-  async addGroupEvents(common: Omit<ScoreEvent, 'id' | 'ts' | 'playerId' | 'groupBatchId'>) {
-    if (!db) return;
-    const batchId = crypto.randomUUID();
-    const ts = Date.now();
-    const temps: ScoreEvent[] = PLAYERS.map((p) => ({
-      ...common,
-      playerId: p.id,
-      id: `tmp-${crypto.randomUUID()}`,
-      ts,
-      groupBatchId: batchId,
-    }));
-    this.events = [...temps, ...this.events];
-    this.emit();
-    try {
-      await Promise.all(
-        PLAYERS.map((p) =>
-          addDoc(collection(db!, 'events'), {
-            ...common,
-            playerId: p.id,
-            ts,
-            groupBatchId: batchId,
-            serverTs: serverTimestamp(),
-          }),
-        ),
-      );
-    } catch (err) {
-      const tempIds = new Set(temps.map((t) => t.id));
-      this.events = this.events.filter((e) => !tempIds.has(e.id));
-      this.emit();
-      window.alert('Feil: kunne ikke registrere gruppepoeng.\n' + (err as Error).message);
-    }
-  }
-
   async removeEvent(id: string) {
     if (!db) return;
     const prev = this.events;
@@ -335,12 +288,6 @@ export function useTeams(userId: string | null): Teams {
 
 export function addEvent(ev: Omit<ScoreEvent, 'id' | 'ts'>) {
   return store.addEvent(ev);
-}
-
-export function addGroupEvents(
-  common: Omit<ScoreEvent, 'id' | 'ts' | 'playerId' | 'groupBatchId'>,
-) {
-  return store.addGroupEvents(common);
 }
 
 export function removeEvent(id: string) {
@@ -440,16 +387,40 @@ export function eventsForPlayerDay(events: ScoreEvent[], playerId: string, dayId
   return events.filter((e) => e.playerId === playerId && e.dayId === dayId);
 }
 
+// Deterministisk FNV-1a-hash → stabil "tilfeldig" rekkefølge per spiller.
+function seedHash(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+// Fyller tomme lag-seter med tilfeldige uvalgte spillere opp til 4.
+// Deterministisk (seedet på userId), så alle klienter ser samme resultat
+// uten å skrive til Firestore. Brukes når dagen er låst.
+export function fillTeamSeats(userId: string, players: string[]): string[] {
+  if (players.length >= 4) return players;
+  const ordered = PLAYERS.filter((p) => p.id !== userId && !players.includes(p.id))
+    .map((p) => p.id)
+    .sort((a, b) => seedHash(userId + a) - seedHash(userId + b));
+  return [...players, ...ordered].slice(0, 4);
+}
+
 export function fantasyTotalByUser(
   userId: string,
   allTeams: Record<string, Teams>,
   rawTotals: Record<string, { total: number; perDay: Record<DayId, number> }>,
 ): number {
   const team = allTeams[userId]?.['lor'];
-  if (!team || team.players.length === 0) return 0;
-  return team.players.reduce((sum, pid) => {
+  const picked = team?.players ?? [];
+  const locked = isDayLocked('lor');
+  const players = locked ? fillTeamSeats(userId, picked) : picked;
+  if (players.length === 0) return 0;
+  return players.reduce((sum, pid) => {
     const pts = rawTotals[pid]?.perDay['lor'] ?? 0;
-    return sum + (team.captain === pid ? pts * 2 : pts);
+    return sum + (team?.captain === pid ? pts * 2 : pts);
   }, 0);
 }
 

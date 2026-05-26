@@ -127,7 +127,6 @@ export function ProfilScreen({ userId }: Props) {
                       }}
                     >
                       {e.dayId.toUpperCase()}
-                      {e.groupBatchId ? ' · GRUPPE' : ''}
                     </div>
                   </div>
                   <span

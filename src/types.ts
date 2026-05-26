@@ -20,10 +20,11 @@ export interface Day {
 }
 
 export type RuleCategory =
-  | 'gruppe'
   | 'stian'
-  | 'pluss'
-  | 'minus'
+  | 'drikking'
+  | 'mot'
+  | 'oslo'
+  | 'diverse'
   | 'egen';
 
 export interface Rule {
@@ -31,9 +32,7 @@ export interface Rule {
   label: string;
   pts: number;
   cat: RuleCategory;
-  repeat?: boolean;
   highlight?: boolean;
-  group?: boolean;
   custom?: boolean;
 }
 
@@ -60,7 +59,6 @@ export interface ScoreEvent {
   pts: number;
   registeredBy: string;
   ts: number;
-  groupBatchId?: string;
 }
 
 export interface Team {

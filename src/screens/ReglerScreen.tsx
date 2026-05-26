@@ -72,12 +72,6 @@ export function ReglerScreen() {
                       >
                         {r.label}
                       </span>
-                      {r.repeat && (
-                        <span className="badge-mono"> · flere ganger</span>
-                      )}
-                      {r.group && (
-                        <span className="badge-mono"> · alle scorer</span>
-                      )}
                     </div>
                     <span
                       className="num bold"

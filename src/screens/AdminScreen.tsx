@@ -7,7 +7,6 @@ import { RULES } from '../data/rules';
 import {
   addCustomRule,
   addEvent,
-  addGroupEvents,
   fantasyTotalByUser,
   removeCustomRule,
   removeEvent,
@@ -135,7 +134,7 @@ function PinGate({ onPass }: { onPass: () => void }) {
   );
 }
 
-type Tab = 'poeng' | 'gruppe' | 'regler' | 'events' | 'frist' | 'fasit';
+type Tab = 'poeng' | 'regler' | 'events' | 'frist' | 'fasit';
 
 function AdminPanel() {
   const [tab, setTab] = useState<Tab>('poeng');
@@ -150,7 +149,6 @@ function AdminPanel() {
           {(
             [
               ['poeng', 'Poeng'],
-              ['gruppe', 'Gruppe'],
               ['regler', 'Regler'],
               ['events', 'Logg'],
               ['frist', 'Frist'],
@@ -169,7 +167,6 @@ function AdminPanel() {
         </div>
 
         {tab === 'poeng' && <PoengTab />}
-        {tab === 'gruppe' && <GruppeTab />}
         {tab === 'regler' && <ReglerTab />}
         {tab === 'events' && <EventsTab />}
         {tab === 'frist' && <FristTab />}
@@ -227,7 +224,7 @@ function PoengTab() {
   }
 
   const allRules: Rule[] = useMemo(
-    () => [...RULES.filter((r) => !r.group), ...customRules],
+    () => [...RULES, ...customRules],
     [customRules],
   );
 
@@ -334,9 +331,6 @@ function PoengTab() {
                   }}
                 >
                   {r.label}
-                  {r.repeat && (
-                    <span className="badge-mono"> · flere ganger</span>
-                  )}
                   {r.custom && (
                     <span
                       className="badge-mono"
@@ -414,72 +408,6 @@ function PoengTab() {
             🗑 Reset alle poeng
           </button>
         )}
-      </div>
-
-      {toast && <div className="toast">{toast}</div>}
-    </>
-  );
-}
-
-function GruppeTab() {
-  const [toast, setToast] = useState<string | null>(null);
-  const groupRules = useMemo(() => RULES.filter((r) => r.group), []);
-
-  function register(ruleId: string) {
-    const rule = RULES.find((r) => r.id === ruleId);
-    if (!rule) return;
-    addGroupEvents({
-      dayId: SATURDAY_ID,
-      ruleId: rule.id,
-      ruleLabel: rule.label,
-      pts: rule.pts,
-      registeredBy: ADMIN_PLAYER_ID,
-    });
-    setToast(`${fmtPts(rule.pts)} til alle ${PLAYERS.length} spillerne`);
-    setTimeout(() => setToast(null), 1800);
-  }
-
-  return (
-    <>
-      <p
-        style={{
-          fontFamily: 'var(--body)',
-          fontSize: 14,
-          color: 'var(--muted)',
-          marginTop: 22,
-          lineHeight: 1.5,
-        }}
-      >
-        Gruppeutfordringer — alle 7 spillerne (inkl. Stian) får poenget i ett
-        trykk.
-      </p>
-
-      <div className="rules-list" style={{ marginTop: 12 }}>
-        {groupRules.map((r) => (
-          <div
-            key={r.id}
-            className="rule-row tap hi"
-            onClick={() => register(r.id)}
-          >
-            <div
-              style={{
-                flex: 1,
-                fontFamily: 'var(--display)',
-                fontWeight: 600,
-                fontSize: 14.5,
-              }}
-            >
-              {r.label}
-              {r.repeat && <span className="badge-mono"> · flere ganger</span>}
-            </div>
-            <span
-              className="num bold"
-              style={{ color: pointsColor(r.pts), fontSize: 15 }}
-            >
-              {fmtPts(r.pts)}
-            </span>
-          </div>
-        ))}
       </div>
 
       {toast && <div className="toast">{toast}</div>}
@@ -684,7 +612,6 @@ function EventsTab() {
               }}
             >
               {PEOPLE_BY_ID[e.playerId]?.name ?? e.playerId}
-              {e.groupBatchId && <span className="badge-mono"> · gruppe</span>}
             </div>
             <div
               style={{
@@ -971,8 +898,8 @@ function FristTab() {
           marginBottom: 14,
         }}
       >
-        Lørdag låses kl. {SATURDAY.deadline} på bryllupsdagen ({SATURDAY.date}).
-        Du kan tvinge den åpen eller låst for testing.
+        Lørdag kl {SATURDAY.deadline} stenger valget for grupper, og tomme seter
+        får automatisk fylt av en tilfeldig uvalgt spiller.
       </p>
       <div className="card" style={{ padding: 16 }}>
         <div
