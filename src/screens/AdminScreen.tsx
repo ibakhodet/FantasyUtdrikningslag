@@ -1046,23 +1046,37 @@ function FristTab() {
         <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
           <button
             className="ghost-btn"
-            style={{ flex: 1, fontSize: 12, padding: '8px 10px' }}
+            style={{
+              flex: 1,
+              fontSize: 12,
+              padding: '8px 10px',
+              ...(resultsOverride === true
+                ? { borderColor: 'var(--accent-gold)', color: 'var(--accent-gold)' }
+                : {}),
+            }}
             onClick={() => {
-              setResultsOverride(revealed ? undefined : true);
+              setResultsOverride(true);
               force((x) => x + 1);
             }}
           >
-            {revealed ? '✓ Vist' : 'Tving vis'}
+            {resultsOverride === true ? '✓ Vist' : 'Tving vis'}
           </button>
           <button
             className="ghost-btn"
-            style={{ flex: 1, fontSize: 12, padding: '8px 10px' }}
+            style={{
+              flex: 1,
+              fontSize: 12,
+              padding: '8px 10px',
+              ...(resultsOverride === false
+                ? { borderColor: 'var(--err)', color: 'var(--err)' }
+                : {}),
+            }}
             onClick={() => {
-              setResultsOverride(revealed ? false : undefined);
+              setResultsOverride(false);
               force((x) => x + 1);
             }}
           >
-            {revealed ? 'Tving skjul' : '✓ Skjult'}
+            {resultsOverride === false ? '✓ Skjult' : 'Tving skjul'}
           </button>
         </div>
         {resultsOverride !== undefined && (

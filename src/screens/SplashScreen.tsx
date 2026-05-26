@@ -4,10 +4,9 @@ import { Eyebrow } from '../components/ui';
 import { ALL_PEOPLE, PLAYERS } from '../data/players';
 import { setCurrentUserId } from '../lib/store';
 import { FIREBASE_ENABLED } from '../lib/firebase';
-import { loginWithGoogle, logout, sendMagicLink, useFirebaseAuth } from '../lib/auth';
+import { loginWithGoogle, logout, sendMagicLink, type AuthState } from '../lib/auth';
 
-export function SplashScreen() {
-  const auth = useFirebaseAuth();
+export function SplashScreen({ auth }: { auth: AuthState }) {
   const [picking, setPicking] = useState(false);
   const [magicMode, setMagicMode] = useState(false);
   const [magicEmail, setMagicEmail] = useState('');
@@ -192,6 +191,16 @@ export function SplashScreen() {
                   En login-lenke ble sendt til <b>{magicEmail}</b>. Åpne den
                   fra mailen, så er du innlogget.
                 </div>
+                <button
+                  className="ghost-btn"
+                  style={{ width: '100%', marginTop: 12 }}
+                  onClick={() => {
+                    setMagicSent(false);
+                    setError(null);
+                  }}
+                >
+                  Annen e-post / send på nytt
+                </button>
               </div>
             ) : (
               <form

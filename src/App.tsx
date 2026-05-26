@@ -17,8 +17,8 @@ import { useFirebaseAuth } from './lib/auth';
 export type TabId = 'lag' | 'tabell' | 'program' | 'regler' | 'admin' | 'profil';
 
 export function App() {
-  // Initializes Firebase auth listener and reconciles with localStorage user.
-  useFirebaseAuth();
+  // Single Firebase auth listener for the whole app; reconciles with localStorage user.
+  const auth = useFirebaseAuth();
   const userId = useCurrentUserId();
   const [tab, setTab] = useState<TabId>('lag');
   const [, forceTick] = useState(0);
@@ -39,7 +39,7 @@ export function App() {
   if (!userId) {
     return (
       <div className="app-shell">
-        <SplashScreen />
+        <SplashScreen auth={auth} />
       </div>
     );
   }

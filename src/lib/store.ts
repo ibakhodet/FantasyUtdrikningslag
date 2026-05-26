@@ -239,10 +239,17 @@ class FirestoreStore {
 
   async setTeam(userId: string, dayId: DayId, team: Team) {
     if (!db) return;
-    if (!this.teams[userId]) this.teams[userId] = emptyTeams();
-    this.teams[userId] = { ...this.teams[userId], [dayId]: team };
+    const prev = this.teams[userId];
+    this.teams[userId] = { ...(prev ?? emptyTeams()), [dayId]: team };
     this.emit();
-    await setDoc(doc(db, 'teams', `${userId}_${dayId}`), team);
+    try {
+      await setDoc(doc(db, 'teams', `${userId}_${dayId}`), team);
+    } catch (err) {
+      if (prev) this.teams[userId] = prev;
+      else delete this.teams[userId];
+      this.emit();
+      window.alert('Feil: kunne ikke lagre laget.\n' + (err as Error).message);
+    }
   }
 
   async addCustomRule(rule: Omit<CustomRule, 'id' | 'createdAt' | 'custom'>) {

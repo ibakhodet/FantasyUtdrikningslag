@@ -138,7 +138,7 @@ export function TeamScreen({ userId }: Props) {
                       marginTop: 6,
                     }}
                   >
-                    {PEOPLE_BY_ID[pid].name}
+                    {PEOPLE_BY_ID[pid]?.name ?? pid}
                   </div>
                   {isAuto && (
                     <div
