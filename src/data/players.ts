@@ -30,7 +30,7 @@ export const ADMIN_PLAYER_ID = 'martin';
 export const EMAIL_TO_PLAYER: Record<string, string> = {
   'stian.schul@gmail.com':       'stian',
   'marteri9@gmail.com':          'martin',
-  'eriktrei@gmail.com':          'erik',
+  'erik.trei@gmail.com':         'erik',
   'eirpedersen@gmail.com':       'eirik',
   'erlendrobertsen@icloud.com':  'erlend',
   'tunlisondre@gmail.com':       'sondre',
