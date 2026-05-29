@@ -517,8 +517,8 @@ function ReglerTab() {
           }}
         />
         <input
-          type="number"
-          inputMode="numeric"
+          type="text"
+          inputMode="text"
           value={pts}
           onChange={(e) => setPts(e.target.value)}
           placeholder="Poeng (negative tall tillatt, f.eks. -5)"
