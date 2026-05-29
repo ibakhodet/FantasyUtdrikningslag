@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
   GoogleAuthProvider,
+  getRedirectResult,
   isSignInWithEmailLink,
   onAuthStateChanged,
   sendSignInLinkToEmail,
   signInWithEmailLink,
-  signInWithPopup,
+  signInWithRedirect,
   signOut,
   type User,
 } from 'firebase/auth';
@@ -26,7 +27,7 @@ const EMAIL_FOR_LINK_KEY = 'fsu:emailForLink';
 
 export function useFirebaseAuth(): AuthState {
   const [state, setState] = useState<AuthState>({
-    loading: false,
+    loading: true,
     user: null,
     playerId: null,
     unknownEmail: null,
@@ -61,6 +62,15 @@ export function useFirebaseAuth(): AuthState {
       }
     }
 
+    // Handle the result coming back from signInWithRedirect (Google on mobile/Safari).
+    getRedirectResult(auth).catch((err: unknown) => {
+      const code = (err as { code?: string }).code ?? '';
+      if (code !== 'auth/cancelled-popup-request') {
+        const msg = err instanceof Error ? err.message : 'Innlogging feilet.';
+        setState((s) => ({ ...s, loading: false, magicLinkError: msg }));
+      }
+    });
+
     return onAuthStateChanged(auth, (user) => {
       if (!user) {
         setCurrentUserId(null);
@@ -83,13 +93,7 @@ export function useFirebaseAuth(): AuthState {
 
 export async function loginWithGoogle() {
   if (!auth) return;
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (err: unknown) {
-    const code = (err as { code?: string }).code ?? '';
-    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
-    throw err;
-  }
+  await signInWithRedirect(auth, provider);
 }
 
 export async function sendMagicLink(email: string) {
