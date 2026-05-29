@@ -55,7 +55,7 @@ export function App() {
   const tabs: TabId[] = [
     'lag',
     'tabell',
-    'program',
+    ...(userId !== 'stian' ? (['program'] as const) : []),
     'regler',
     ...(userId === ADMIN_PLAYER_ID ? (['admin'] as const) : []),
     'profil',
