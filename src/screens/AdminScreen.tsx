@@ -331,6 +331,52 @@ function PoengTab() {
               </button>
             )}
           </div>
+          {/* Event log for selected player */}
+          {(() => {
+            const playerEvents = events
+              .filter((e) => e.playerId === selected && e.dayId === SATURDAY_ID)
+              .slice()
+              .reverse();
+            return (
+              <div style={{ marginBottom: 16 }}>
+                <Eyebrow style={{ marginBottom: 6 }}>HENDELSER</Eyebrow>
+                {playerEvents.length === 0 ? (
+                  <div style={{ fontFamily: 'var(--body)', fontSize: 13, color: 'var(--muted)', padding: '8px 0' }}>
+                    Ingen hendelser registrert ennå.
+                  </div>
+                ) : (
+                  <div className="rules-list">
+                    {playerEvents.map((e) => (
+                      <div key={e.id} className="rule-row" style={{ gap: 8 }}>
+                        <span style={{ flex: 1, fontFamily: 'var(--body)', fontSize: 13.5 }}>
+                          {e.ruleLabel}
+                        </span>
+                        <span className="num bold" style={{ color: pointsColor(e.pts), fontSize: 14 }}>
+                          {fmtPts(e.pts)}
+                        </span>
+                        <button
+                          onClick={() => removeEvent(e.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--muted)',
+                            fontSize: 18,
+                            lineHeight: 1,
+                            padding: '0 2px',
+                            cursor: 'pointer',
+                          }}
+                          aria-label="Slett"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           <div className="rules-list">
             {grouped.map((g) => (
               <Fragment key={g.cat.id}>
