@@ -1,13 +1,14 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Avatar } from '../components/Avatar';
 import { Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
-import { ALL_PEOPLE, PEOPLE_BY_ID, PLAYERS, ADMIN_PLAYER_ID } from '../data/players';
+import { ALL_PEOPLE, PEOPLE_BY_ID, PLAYERS, ADMIN_PLAYER_ID, WITHDRAWN_IDS } from '../data/players';
 import { SATURDAY, SATURDAY_ID } from '../data/days';
 import { RULES, CATEGORIES } from '../data/rules';
 import {
   addCustomRule,
   addEvent,
   fantasyTotalByUser,
+  fillTeamSeats,
   removeCustomRule,
   removeEvent,
   resetAllEvents,
@@ -696,14 +697,21 @@ function FasitTab() {
 
   const rawTotals = useMemo(() => totalsByPlayer(events), [events]);
 
+  const locked = isDayLocked(SATURDAY_ID);
   const standings = useMemo(
     () =>
-      PLAYERS.map((p) => ({
-        p,
-        fantasyTotal: fantasyTotalByUser(p.id, allTeams, rawTotals),
-        team: allTeams[p.id]?.['lor'] ?? null,
-      })).sort((a, b) => b.fantasyTotal - a.fantasyTotal),
-    [allTeams, rawTotals],
+      PLAYERS.map((p) => {
+        const stored = allTeams[p.id]?.['lor'] ?? null;
+        const activePicks = (stored?.players ?? []).filter((pid) => !WITHDRAWN_IDS.has(pid));
+        const effectivePlayers = locked ? fillTeamSeats(p.id, activePicks) : activePicks;
+        return {
+          p,
+          fantasyTotal: fantasyTotalByUser(p.id, allTeams, rawTotals),
+          team: stored,
+          effectivePlayers,
+        };
+      }).sort((a, b) => b.fantasyTotal - a.fantasyTotal),
+    [allTeams, rawTotals, locked],
   );
 
   const sortedByReal = useMemo(
@@ -763,7 +771,6 @@ function FasitTab() {
       <div style={{ marginTop: 28 }}>
         <Eyebrow style={{ marginBottom: 12 }}>SLUTTRESULTAT · FANTASY</Eyebrow>
         {standings.map((row, i) => {
-          const team = row.team;
           const rank = fasitRank(standings, i);
           const isWinner = rank === 1 && hasScores;
           return (
@@ -805,9 +812,9 @@ function FasitTab() {
                     {row.p.name}
                   </div>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    {team && team.players.length > 0 ? (
-                      team.players.map((pid) => {
-                        const isCapt = team.captain === pid;
+                    {row.effectivePlayers.length > 0 ? (
+                      row.effectivePlayers.map((pid) => {
+                        const isCapt = row.team?.captain === pid;
                         const pPts = rawTotals[pid]?.perDay['lor'] ?? 0;
                         const person = PEOPLE_BY_ID[pid];
                         return (
