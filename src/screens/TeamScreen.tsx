@@ -1,6 +1,6 @@
 import { Avatar } from '../components/Avatar';
 import { Eyebrow, H1, fmtPts, pointsColor } from '../components/ui';
-import { ALL_PEOPLE, PEOPLE_BY_ID } from '../data/players';
+import { ALL_PEOPLE, PEOPLE_BY_ID, WITHDRAWN_IDS } from '../data/players';
 import { SATURDAY, SATURDAY_ID } from '../data/days';
 import { isDayLocked } from '../lib/locking';
 import { fillTeamSeats, setTeam, useEvents, useTeams } from '../lib/store';
@@ -17,28 +17,28 @@ export function TeamScreen({ userId }: Props) {
   const inTeam = teams[SATURDAY_ID];
   const candidates = ALL_PEOPLE.filter((p) => p.id !== userId); // can pick Stian, not self
   const isLocked = isDayLocked(SATURDAY_ID);
-  // Når låst fylles tomme seter med tilfeldige uvalgte spillere.
-  const seats = isLocked ? fillTeamSeats(userId, inTeam.players) : inTeam.players;
+  // Filter out withdrawn players (e.g. Erik) from stored picks before display/logic.
+  const activePicks = inTeam.players.filter((pid) => !WITHDRAWN_IDS.has(pid));
+  const effectiveCaptain = WITHDRAWN_IDS.has(inTeam.captain ?? '') ? null : inTeam.captain;
+  const seats = isLocked ? fillTeamSeats(userId, inTeam.players) : activePicks;
 
   function togglePlayer(pid: string) {
     if (isLocked) return;
-    const cur = inTeam.players;
-    if (cur.includes(pid)) {
-      const next = cur.filter((x) => x !== pid);
+    if (activePicks.includes(pid)) {
       setTeam(userId, SATURDAY_ID, {
-        players: next,
-        captain: inTeam.captain === pid ? null : inTeam.captain,
+        players: activePicks.filter((x) => x !== pid),
+        captain: effectiveCaptain === pid ? null : effectiveCaptain,
       });
-    } else if (cur.length < 4) {
-      setTeam(userId, SATURDAY_ID, { ...inTeam, players: [...cur, pid] });
+    } else if (activePicks.length < 4) {
+      setTeam(userId, SATURDAY_ID, { players: [...activePicks, pid], captain: effectiveCaptain });
     }
   }
   function setCap(pid: string) {
     if (isLocked) return;
-    if (!inTeam.players.includes(pid)) return;
+    if (!activePicks.includes(pid)) return;
     setTeam(userId, SATURDAY_ID, {
-      ...inTeam,
-      captain: inTeam.captain === pid ? null : pid,
+      players: activePicks,
+      captain: effectiveCaptain === pid ? null : pid,
     });
   }
 
@@ -88,7 +88,7 @@ export function TeamScreen({ userId }: Props) {
             }}
           >
             <Eyebrow>{day.theme.toUpperCase()}</Eyebrow>
-            <Eyebrow>{inTeam.players.length}/4</Eyebrow>
+            <Eyebrow>{activePicks.length}/4</Eyebrow>
           </div>
           <div
             style={{
@@ -105,8 +105,8 @@ export function TeamScreen({ userId }: Props) {
                     +
                   </div>
                 );
-              const isCap = inTeam.captain === pid;
-              const isAuto = isLocked && !inTeam.players.includes(pid);
+              const isCap = effectiveCaptain === pid;
+              const isAuto = isLocked && !activePicks.includes(pid);
               return (
                 <div
                   key={pid}
@@ -167,9 +167,9 @@ export function TeamScreen({ userId }: Props) {
                 padding: '0 8px',
               }}
             >
-              {inTeam.players.length < 4
+              {activePicks.length < 4
                 ? 'Velg 4 fra benken under.'
-                : inTeam.captain
+                : effectiveCaptain
                 ? 'Trykk på en spiller for å bytte kaptein.'
                 : 'Trykk på en spiller for å sette kaptein (×2).'}
             </div>
@@ -198,7 +198,7 @@ export function TeamScreen({ userId }: Props) {
           }}
         >
           {candidates.map((p) => {
-            const inT = inTeam.players.includes(p.id);
+            const inT = activePicks.includes(p.id);
             const dPts = dayPts(p.id);
             return (
               <div

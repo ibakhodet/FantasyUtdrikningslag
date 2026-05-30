@@ -9,7 +9,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { FIREBASE_ENABLED, db } from './firebase';
-import { PLAYERS } from '../data/players';
+import { PLAYERS, WITHDRAWN_IDS } from '../data/players';
 import { isDayLocked } from './locking';
 import type { CustomRule, DayId, ScoreEvent, Team, Teams } from '../types';
 
@@ -408,11 +408,12 @@ function seedHash(s: string): number {
 // Deterministisk (seedet på userId), så alle klienter ser samme resultat
 // uten å skrive til Firestore. Brukes når dagen er låst.
 export function fillTeamSeats(userId: string, players: string[]): string[] {
-  if (players.length >= 4) return players;
-  const ordered = PLAYERS.filter((p) => p.id !== userId && !players.includes(p.id))
+  const active = players.filter((pid) => !WITHDRAWN_IDS.has(pid));
+  if (active.length >= 4) return active;
+  const ordered = PLAYERS.filter((p) => p.id !== userId && !active.includes(p.id))
     .map((p) => p.id)
     .sort((a, b) => seedHash(userId + a) - seedHash(userId + b));
-  return [...players, ...ordered].slice(0, 4);
+  return [...active, ...ordered].slice(0, 4);
 }
 
 export function fantasyTotalByUser(
@@ -421,7 +422,7 @@ export function fantasyTotalByUser(
   rawTotals: Record<string, { total: number; perDay: Record<DayId, number> }>,
 ): number {
   const team = allTeams[userId]?.['lor'];
-  const picked = team?.players ?? [];
+  const picked = (team?.players ?? []).filter((pid) => !WITHDRAWN_IDS.has(pid));
   const locked = isDayLocked('lor');
   const players = locked ? fillTeamSeats(userId, picked) : picked;
   if (players.length === 0) return 0;
